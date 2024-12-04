@@ -14,7 +14,7 @@ options.register ('format',
                   'EMP', # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,
-                  "File format (APx, EMP or X2O)")
+                  "File format (APx, EMP, EMPv2 or X2O)")
 options.register('threads',
                  1, # default value
                  VarParsing.VarParsing.multiplicity.singleton,
@@ -42,9 +42,10 @@ options.register ('readerformat',
                   "File format of loaded tracks and vertices (APx, EMPv2)")
 options.parseArguments()
 
-inputFiles = []
+inputFiles = ["/store/relval/CMSSW_14_0_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_133X_mcRun4_realistic_v1_STD_2026D98_PU200_RV229-v1/2580000/0b2b0b0b-f312-48a8-9d46-ccbadc69bbfd.root"]
 inputBuffers = []
 inputTrackBuffers = []
+
 for filePath in options.inputFiles:
     if filePath.endswith(".root"):
         inputFiles.append(filePath)
@@ -64,15 +65,19 @@ for filePath in options.inputFiles:
 
 # PART 2: SETUP MAIN CMSSW PROCESS 
 
-
 process = cms.Process("GTTFileWriter")
 
-process.load('Configuration.Geometry.GeometryExtendedRun4D88Reco_cff')
-process.load('Configuration.Geometry.GeometryExtendedRun4D88_cff')
+GEOMETRY = "D98"
+process.load('Configuration.Geometry.GeometryExtendedRun4' + GEOMETRY + 'Reco_cff')
+process.load('Configuration.Geometry.GeometryExtendedRun4' + GEOMETRY +'_cff')
+
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '133X_mcRun4_realistic_v1', '')
+
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 
 process.source = cms.Source("PoolSource",
