@@ -199,6 +199,8 @@ void RawToClusterProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
             
             // get the channel header and unpack it
             uint32_t headerWord = readLine(dataPtr, idx);
+            // unsigned long eventID = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS)) & L1ID_MAX_VALUE;  // 9-bit field
+            // int channelErrors = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS - CIC_ERROR_BITS)) & CIC_ERROR_MASK;  // 9-bit field
             unsigned int numStripClusters = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS - CIC_ERROR_BITS - N_STRIP_CLUSTER_BITS)) & N_CLUSTER_MASK;  // 7-bit field
             unsigned int numPixelClusters = (headerWord) & N_CLUSTER_MASK;  // 7-bit field
             
@@ -322,6 +324,7 @@ uint32_t RawToClusterProducer::readLine(const unsigned char* dataPtr, int lineId
 std::pair<Phase2TrackerCluster1D, bool> RawToClusterProducer::unpack2S(uint32_t clusterWord, unsigned int iChannel){
 
     uint32_t chipID = (clusterWord >> (SS_CLUSTER_BITS - CHIP_ID_BITS)) & CHIP_ID_MAX_VALUE;  // 3 bits
+    // uint32_t sclusterAddress_toDelete = (clusterWord >> 3) & 0xFF; // only for debugging
     uint32_t sclusterAddress = (clusterWord >> (SS_CLUSTER_BITS - CHIP_ID_BITS - SCLUSTER_ADDRESS_ONLY_BITS_2S)) & SCLUSTER_ADDRESS_BITS_HEX; // why not uint16?
     bool isSeedSensor = (clusterWord >> (SS_CLUSTER_BITS - CHIP_ID_BITS - SCLUSTER_ADDRESS_BITS_2S)) & IS_SEED_SENSOR_BITS;  // 8 bits
     uint32_t width = clusterWord &  WIDTH_MAX_VALUE;  // 3 bits
