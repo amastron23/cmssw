@@ -31,7 +31,7 @@ options.register('process',
 options.parseArguments()
 
 #GEOMETRY = "D88"
-GEOMETRY = "D98"
+GEOMETRY = ""
 
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('Configuration.EventContent.EventContent_cff')
@@ -39,12 +39,12 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.MessageLogger.A = dict(limit = -1)
 
-if GEOMETRY == "D88" or GEOMETRY == 'D98':
-    print("using geometry " + GEOMETRY + " (tilted)")
-    process.load('Configuration.Geometry.GeometryExtended2026' + GEOMETRY + 'Reco_cff')
-    process.load('Configuration.Geometry.GeometryExtended2026' + GEOMETRY +'_cff')
-else:
-    print("this is not a valid geometry!!!")
+# if GEOMETRY == "D88" or GEOMETRY == 'D98':
+print("using geometry " + GEOMETRY + " (tilted)")
+process.load('Configuration.Geometry.GeometryExtended2025' + GEOMETRY + 'Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2025' + GEOMETRY +'_cff')
+# else:
+#     print("this is not a valid geometry!!!")
 
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
@@ -53,15 +53,8 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '133X_mcRun4_realistic_v1', '')
 # process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
-DatasetDatabase = "/home/hep/am2023/cmssw_el9_amd64_gcc12/CMSSW_14_0_0_pre2/src/Datasets/Phase2Spring23Track1GeVL1TFix.list"
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
-
-try:
-    InputMC = [get_input_mc_line(DatasetDatabase, options.process)]
-except Exception as e:
-    print(f"Error: {e}")
-    InputMC = []
+InputMC = ["/store/mc/Phase2Spring23DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_L1TFix_Trk1GeV_131X_mcRun4_realistic_v9-v1/50000/6a0e35b9-2dc5-4ba4-90c4-291b46779e6a.root"]
 
 print(f"InputMC: {InputMC}")
 process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*InputMC))
