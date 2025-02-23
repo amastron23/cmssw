@@ -89,6 +89,9 @@ namespace trackerTFP {
   }
 
   void ProducerTQ::produce(Event& iEvent, const EventSetup& iSetup) {
+
+    std::cout << "ProducerTQ::produce( ... )" << std::endl;
+
     static const int numRegions = setup_->numRegions();
     static const int numLayers = setup_->numLayers();
     auto valid = [](int sum, const FrameTrack& frame) { return sum += (frame.first.isNull() ? 0 : 1); };

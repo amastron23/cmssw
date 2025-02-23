@@ -276,6 +276,9 @@ namespace trackerTFP {
     conifer::BDT<float, float> bdt(this->model_.fullPath());
     // collect features and classify using bdt
     vector<float> inputs = featureTransform(aTrack, this->featureNames_);
+
+    std::cout << inputs[0] << ", " << inputs[1] << ", " << inputs[2] << ", " << inputs[3] << ", " << inputs[4] << ", " << inputs[5] << ", " << inputs[6] << std::endl;
+
     vector<float> output = bdt.decision_function(inputs);
     aTrack.settrkMVA1(1. / (1. + exp(-output.at(0))));
   }
