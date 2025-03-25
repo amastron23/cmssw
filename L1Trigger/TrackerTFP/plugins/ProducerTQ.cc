@@ -88,14 +88,17 @@ namespace trackerTFP {
     trackQuality_ = &iSetup.getData(esGetTokenTrackQuality_);
   }
 
-  void ProducerTQ::produce(Event& iEvent, const EventSetup& iSetup) {
+  void ProducerTQ::produce(Event& iEvent, const EventSetup& iSetup) 
+  {
     static const int numRegions = setup_->numRegions();
     static const int numLayers = setup_->numLayers();
     auto valid = [](int sum, const FrameTrack& frame) { return sum += (frame.first.isNull() ? 0 : 1); };
+
     // empty TQ product
-    StreamsTrack outputTracks(numRegions);
-    Streams outputTracksAdd(numRegions);
-    StreamsStub outputStubs(numRegions * numLayers);
+    StreamsTrack outputTracks (numRegions);
+    Streams outputTracksAdd   (numRegions);
+    StreamsStub outputStubs   (numRegions * numLayers);
+
     // read in KF Product and produce TQ product
     Handle<StreamsStub> handleStubs;
     iEvent.getByToken<StreamsStub>(edGetTokenStubs_, handleStubs);
@@ -103,51 +106,69 @@ namespace trackerTFP {
     Handle<StreamsTrack> handleTracks;
     iEvent.getByToken<StreamsTrack>(edGetTokenTracks_, handleTracks);
     const StreamsTrack& streamsTracks = *handleTracks.product();
-    for (int region = 0; region < numRegions; region++) {
+    
+    for (int region = 0; region < numRegions; region++) 
+    {
       // calculate track quality
-      const int offsetLayer = region * numLayers;
-      const StreamTrack& streamTrack = streamsTracks[region];
-      const int nTracks = accumulate(streamTrack.begin(), streamTrack.end(), 0, valid);
-      vector<Track> tracks;
-      tracks.reserve(nTracks);
-      vector<Track*> stream;
-      stream.reserve(streamTrack.size());
-      for (int frame = 0; frame < (int)streamTrack.size(); frame++) {
+      const int offsetLayer             = region * numLayers;
+      const StreamTrack& streamTrack    = streamsTracks[region];
+      const int nTracks                 = accumulate(streamTrack.begin(), streamTrack.end(), 0, valid);
+
+      vector<Track>   tracks;
+      tracks.reserve  (nTracks);
+      vector<Track*>  stream;
+      stream.reserve  (streamTrack.size());
+
+      for (int frame = 0; frame < (int)streamTrack.size(); frame++) 
+      {
         const FrameTrack& frameTrack = streamTrack[frame];
-        if (frameTrack.first.isNull()) {
+
+        if (frameTrack.first.isNull()) 
+        {
           stream.push_back(nullptr);
           continue;
         }
+
         StreamStub streamStub;
         streamStub.reserve(numLayers);
+
         for (int layer = 0; layer < numLayers; layer++)
           streamStub.push_back(streamsStubs[offsetLayer + layer][frame]);
+        
         tracks.emplace_back(frameTrack, streamStub, trackQuality_);
         stream.push_back(&tracks.back());
       }
       // fill TQ product
       outputTracks[region].reserve(stream.size());
       outputTracksAdd[region].reserve(stream.size());
+
       for (int layer = 0; layer < setup_->numLayers(); layer++)
         outputStubs[offsetLayer + layer].reserve(stream.size());
-      for (Track* track : stream) {
-        if (!track) {
+      
+      for (Track* track : stream) 
+      {
+        if (!track) 
+        {
           outputTracks[region].emplace_back(FrameTrack());
           outputTracksAdd[region].emplace_back(Frame());
           for (int layer = 0; layer < setup_->numLayers(); layer++)
             outputStubs[offsetLayer + layer].emplace_back(FrameStub());
           continue;
         }
+
         outputTracks[region].emplace_back(track->frameTrack_);
         outputTracksAdd[region].emplace_back(track->frame_);
+
         for (int layer = 0; layer < setup_->numLayers(); layer++)
           outputStubs[offsetLayer + layer].emplace_back(track->streamStub_[layer]);
       }
     }
+
     // store TQ product
     iEvent.emplace(edPutTokenTracks_, move(outputTracks));
     iEvent.emplace(edPutTokenTracksAdd_, move(outputTracksAdd));
     iEvent.emplace(edPutTokenStubs_, streamsStubs);
+    
   }
 }  // namespace trackerTFP
 
