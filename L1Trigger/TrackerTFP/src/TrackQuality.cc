@@ -158,6 +158,16 @@ namespace trackerTFP {
     tq->format(VariableTQ::chi2rphi).attach(trackchi2rphi, ttBV);
     tq->format(VariableTQ::chi2rz).attach(trackchi2rz, ttBV);
     frame_ = ttBV.bs();
+
+
+    std::cout << trackchi2rz << std::endl;
+    // std::cout << trackchi2rz << std::endl;
+    // std::cout << std::hex << std::setw(5) << std::setfill('0') << static_cast<uint32_t>(trackchi2rz) << std::dec << std::endl;
+
+    // std::cout   << std::setfill('0') << std::setw(16)
+    //             << std::hex << std::nouppercase << val
+    //             << std::dec << "\n";  // switch back to decimal
+
   }
 
   template <>

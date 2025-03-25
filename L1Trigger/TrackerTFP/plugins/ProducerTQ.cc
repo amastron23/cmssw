@@ -37,6 +37,26 @@ namespace trackerTFP {
     void produce(Event&, const EventSetup&) override;
     void endJob() {}
 
+    void printStreamsTrackHex(const tt::StreamsTrack& streamsTrack) {
+      for (size_t regionIdx = 0; regionIdx < streamsTrack.size(); ++regionIdx) {
+        const tt::StreamTrack& streamTrack = streamsTrack[regionIdx];
+        std::cout << "Region " << regionIdx << ":\n";
+
+        for (size_t trackIdx = 0; trackIdx < streamTrack.size(); ++trackIdx) {
+          const tt::FrameTrack& frameTrack = streamTrack[trackIdx];
+          const tt::Frame& frame = frameTrack.second;
+
+          // Convert to unsigned long long and print as 16-digit lowercase hex
+          uint64_t val = frame.to_ullong();
+
+          std::cout << std::setfill('0') << std::setw(16)
+                    << std::hex << std::nouppercase << val
+                    << std::dec << "\n";  // switch back to decimal
+        }
+      }
+    }
+
+
   private:
     typedef TrackQuality::Track Track;
     // ED input token of kf stubs
@@ -164,11 +184,13 @@ namespace trackerTFP {
       }
     }
 
+    // printStreamsTrackHex(outputTracks);
+
     // store TQ product
     iEvent.emplace(edPutTokenTracks_, move(outputTracks));
     iEvent.emplace(edPutTokenTracksAdd_, move(outputTracksAdd));
     iEvent.emplace(edPutTokenStubs_, streamsStubs);
-    
+
   }
 }  // namespace trackerTFP
 
