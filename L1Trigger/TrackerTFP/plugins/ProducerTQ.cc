@@ -22,7 +22,8 @@ using namespace edm;
 using namespace tt;
 using namespace trackerTFP;
 
-namespace trackerTFP {
+namespace trackerTFP 
+{
 
   /*! \class  trackerTFP::ProducerTQ
    *  \brief  Bit accurate emulation of the track quality BDT
@@ -37,12 +38,15 @@ namespace trackerTFP {
     void produce(Event&, const EventSetup&) override;
     void endJob() {}
 
-    void printStreamsTrackHex(const tt::StreamsTrack& streamsTrack) {
-      for (size_t regionIdx = 0; regionIdx < streamsTrack.size(); ++regionIdx) {
+    void printStreamsTrackHex(const tt::StreamsTrack& streamsTrack) 
+    {
+      for (size_t regionIdx = 0; regionIdx < streamsTrack.size(); ++regionIdx) 
+      {
         const tt::StreamTrack& streamTrack = streamsTrack[regionIdx];
         std::cout << "Region " << regionIdx << ":\n";
 
-        for (size_t trackIdx = 0; trackIdx < streamTrack.size(); ++trackIdx) {
+        for (size_t trackIdx = 0; trackIdx < streamTrack.size(); ++trackIdx)
+        {
           const tt::FrameTrack& frameTrack = streamTrack[trackIdx];
           const tt::Frame& frame = frameTrack.second;
 
@@ -55,6 +59,35 @@ namespace trackerTFP {
         }
       }
     }
+
+
+  void printStreamsTrackHexWithTrackInfo(const tt::StreamsTrack& streamsTrack) {
+    for (size_t regionIdx = 0; regionIdx < streamsTrack.size(); ++regionIdx) {
+      const tt::StreamTrack& streamTrack = streamsTrack[regionIdx];
+      std::cout << "Region " << regionIdx << ":\n";
+
+      for (size_t trackIdx = 0; trackIdx < streamTrack.size(); ++trackIdx) {
+        const tt::FrameTrack& frameTrack = streamTrack[trackIdx];
+        const TTTrackRef& trackRef = frameTrack.first;
+        const tt::Frame& frame = frameTrack.second;
+
+        std::cout << "  Track " << trackIdx << ":\n";
+
+        if (trackRef.isNonnull() && trackRef.isAvailable()) {
+          const auto& track = *trackRef;
+          std::cout << track.tanL() << "\n";
+        } else {
+          std::cout << "    [Invalid TTTrackRef]\n";
+        }
+
+        // uint64_t val = frame.to_ullong();
+        // std::cout << "    Frame (hex): 0x"
+        //           << std::setfill('0') << std::setw(16)
+        //           << std::hex << std::nouppercase << val
+        //           << std::dec << "\n";  // reset stream to decimal
+      }
+    }
+  }
 
 
   private:
@@ -83,23 +116,26 @@ namespace trackerTFP {
     const TrackQuality* trackQuality_ = nullptr;
   };
 
-  ProducerTQ::ProducerTQ(const ParameterSet& iConfig) {
-    const string& label = iConfig.getParameter<string>("InputLabelTQ");
-    const string& branchStubs = iConfig.getParameter<string>("BranchStubs");
-    const string& branchTracks = iConfig.getParameter<string>("BranchTracks");
+  ProducerTQ::ProducerTQ(const ParameterSet& iConfig) 
+  {
+    const string& label           = iConfig.getParameter<string>("InputLabelTQ");
+    const string& branchStubs     = iConfig.getParameter<string>("BranchStubs");
+    const string& branchTracks    = iConfig.getParameter<string>("BranchTracks");
+
     // book in- and output ED products
-    edGetTokenStubs_ = consumes<StreamsStub>(InputTag(label, branchStubs));
-    edGetTokenTracks_ = consumes<StreamsTrack>(InputTag(label, branchTracks));
-    edPutTokenTracks_ = produces<StreamsTrack>(branchTracks);
-    edPutTokenTracksAdd_ = produces<Streams>(branchTracks);
-    edPutTokenStubs_ = produces<StreamsStub>(branchStubs);
+    edGetTokenStubs_              = consumes<StreamsStub>  (InputTag(label, branchStubs));
+    edGetTokenTracks_             = consumes<StreamsTrack> (InputTag(label, branchTracks));
+    edPutTokenTracks_             = produces<StreamsTrack> (branchTracks);
+    edPutTokenTracksAdd_          = produces<Streams>      (branchTracks);
+    edPutTokenStubs_              = produces<StreamsStub>  (branchStubs);
     // book ES products
-    esGetTokenSetup_ = esConsumes<Setup, SetupRcd, Transition::BeginRun>();
-    esGetTokenDataFormats_ = esConsumes<DataFormats, DataFormatsRcd, Transition::BeginRun>();
-    esGetTokenTrackQuality_ = esConsumes<TrackQuality, TrackQualityRcd, Transition::BeginRun>();
+    esGetTokenSetup_              = esConsumes<Setup, SetupRcd, Transition::BeginRun>();
+    esGetTokenDataFormats_        = esConsumes<DataFormats, DataFormatsRcd, Transition::BeginRun>();
+    esGetTokenTrackQuality_       = esConsumes<TrackQuality, TrackQualityRcd, Transition::BeginRun>();
   }
 
-  void ProducerTQ::beginRun(const Run& iRun, const EventSetup& iSetup) {
+  void ProducerTQ::beginRun(const Run& iRun, const EventSetup& iSetup) 
+  {
     // helper class to store configurations
     setup_ = &iSetup.getData(esGetTokenSetup_);
     // helper class to extract structured data from tt::Frames
@@ -153,17 +189,22 @@ namespace trackerTFP {
         streamStub.reserve(numLayers);
 
         for (int layer = 0; layer < numLayers; layer++)
+        {
           streamStub.push_back(streamsStubs[offsetLayer + layer][frame]);
+        }
         
         tracks.emplace_back(frameTrack, streamStub, trackQuality_);
         stream.push_back(&tracks.back());
       }
+
       // fill TQ product
       outputTracks[region].reserve(stream.size());
       outputTracksAdd[region].reserve(stream.size());
 
       for (int layer = 0; layer < setup_->numLayers(); layer++)
+      {
         outputStubs[offsetLayer + layer].reserve(stream.size());
+      }
       
       for (Track* track : stream) 
       {
@@ -171,8 +212,11 @@ namespace trackerTFP {
         {
           outputTracks[region].emplace_back(FrameTrack());
           outputTracksAdd[region].emplace_back(Frame());
+
           for (int layer = 0; layer < setup_->numLayers(); layer++)
+          {
             outputStubs[offsetLayer + layer].emplace_back(FrameStub());
+          }
           continue;
         }
 
@@ -180,11 +224,13 @@ namespace trackerTFP {
         outputTracksAdd[region].emplace_back(track->frame_);
 
         for (int layer = 0; layer < setup_->numLayers(); layer++)
+        {
           outputStubs[offsetLayer + layer].emplace_back(track->streamStub_[layer]);
+        }
       }
     }
 
-    // printStreamsTrackHex(outputTracks);
+    printStreamsTrackHexWithTrackInfo(outputTracks);
 
     // store TQ product
     iEvent.emplace(edPutTokenTracks_, move(outputTracks));

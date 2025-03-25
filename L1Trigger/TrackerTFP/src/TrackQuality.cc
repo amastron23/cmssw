@@ -160,7 +160,7 @@ namespace trackerTFP {
     frame_ = ttBV.bs();
 
 
-    std::cout << trackchi2rz << std::endl;
+    // std::cout << trackchi2rz << std::endl;
     // std::cout << trackchi2rz << std::endl;
     // std::cout << std::hex << std::setw(5) << std::setfill('0') << static_cast<uint32_t>(trackchi2rz) << std::dec << std::endl;
 
