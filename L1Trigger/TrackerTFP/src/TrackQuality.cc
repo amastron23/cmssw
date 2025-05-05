@@ -151,6 +151,7 @@ namespace trackerTFP {
     conifer::BDT<ap_fixed<10, 5>, ap_fixed<10, 5>> bdt(tq->model().fullPath());
     // collect features and classify using bdt
     const vector<ap_fixed<10, 5>>& output = bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
+    std::cout << chi2rz << std::endl;
     const float mva = output[0].to_float();
     // fill frame
     string hits = hitPattern.str();
