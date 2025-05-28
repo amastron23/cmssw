@@ -17,6 +17,8 @@ TrackerTFPProducer_params = cms.PSet (
   BranchTTTracks   = cms.string( "TrackAccepted" ),  # branch for prodcut with passed TTTracks
   BranchTruncated  = cms.string( "Truncated"     ),  # branch for truncated prodcuts
   EnableTruncation = cms.bool  ( True  ),            # enable emulation of truncation, lost stubs are filled in BranchLost
-  PrintKFDebug     = cms.bool  ( False )             # print end job internal unused MSB
+  PrintKFDebug     = cms.bool  ( False ),             # print end job internal unused MSB
+  InputTagReconstructable = cms.InputTag("StubAssociator", "Reconstructable"), #
+  InputTagSelection = cms.InputTag("StubAssociator", "UseForAlgEff") #
 
 )

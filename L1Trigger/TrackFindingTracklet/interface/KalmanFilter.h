@@ -8,6 +8,7 @@
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
 #include "L1Trigger/TrackFindingTMTT/interface/Settings.h"
 #include "L1Trigger/TrackFindingTMTT/interface/KFParamsComb.h"
+#include "SimTracker/TrackTriggerAssociation/interface/StubAssociation.h"
 
 #include <vector>
 #include <deque>
@@ -49,7 +50,11 @@ namespace trklet {
                  tmtt::Settings* settings,
                  tmtt::KFParamsComb* tmtt,
                  int region,
-                 tt::TTTracks& ttTracks);
+                 tt::TTTracks& ttTracks,
+                 const tt::StubAssociation* selection,
+                 const tt::StubAssociation* reconstructable,
+                 std::ofstream& output_file,
+                 std::ofstream& output_final);
     ~KalmanFilter() {}
     // read in and organize input tracks and stubs
     void consume(const tt::StreamsTrack& streamsTrack, const tt::StreamsStub& streamsStub);
@@ -157,6 +162,17 @@ namespace trklet {
     std::vector<Track> finals_;
     // current layer used during state propagation
     int layer_;
+
+    const tt::StubAssociation* selection;
+
+    const tt::StubAssociation* reconstructable;
+
+    std::ofstream& output_file;
+
+    std::ofstream& output_file_final;
+
+    bool isAssociatedToSingleTP(Track* track);
+
   };
 
 }  // namespace trklet

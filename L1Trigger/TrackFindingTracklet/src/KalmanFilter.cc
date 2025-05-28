@@ -25,11 +25,15 @@ namespace trklet {
                              Settings* settings,
                              KFParamsComb* tmtt,
                              int region,
-                             TTTracks& ttTracks)
-      : enableTruncation_(iConfig.getParameter<bool>("EnableTruncation")),
-        use5ParameterFit_(iConfig.getParameter<bool>("Use5ParameterFit")),
-        useSimmulation_(iConfig.getParameter<bool>("UseKFsimmulation")),
-        useTTStubResiduals_(iConfig.getParameter<bool>("UseTTStubResiduals")),
+                             TTTracks& ttTracks,
+                             const tt::StubAssociation* selection, 
+                             const tt::StubAssociation* reconstructable,
+                             std::ofstream& output_file,
+                             std::ofstream& output_file_final)
+      : enableTruncation_   (iConfig.getParameter<bool>("EnableTruncation")),
+        use5ParameterFit_   (iConfig.getParameter<bool>("Use5ParameterFit")),
+        useSimmulation_     (iConfig.getParameter<bool>("UseKFsimmulation")),
+        useTTStubResiduals_ (iConfig.getParameter<bool>("UseTTStubResiduals")),
         setup_(setup),
         dataFormats_(dataFormats),
         kalmanFilterFormats_(kalmanFilterFormats),
@@ -37,7 +41,11 @@ namespace trklet {
         tmtt_(tmtt),
         region_(region),
         ttTracks_(ttTracks),
-        layer_(0) {}
+        layer_(0),
+        selection (selection),
+        reconstructable(reconstructable),
+        output_file (output_file),
+        output_file_final(output_file_final) {}
 
   // read in and organize input tracks and stubs
   void KalmanFilter::consume(const StreamsTrack& streamsTrack, const StreamsStub& streamsStub) {
@@ -252,12 +260,22 @@ namespace trklet {
     finalize();
     // best track per candidate selection
     accumulator();
-    // Transform States into output products
-    conv(streamsStub, streamsTrack);
+
+    // for (const auto& stream : streamsTrack)
+    // { 
+    //   for (const auto& frameTrack : stream) 
+    //   {
+    //     const TTTrackRef& trackRef = frameTrack.first;
+    //     std::cout << trackRef->phi() << std::endl;
+    //   }
+    // }
+
   }
 
   // apply final cuts
-  void KalmanFilter::finalize() {
+  void KalmanFilter::finalize() 
+  {
+    // std::cout << "KalmanFilter::finalize()" << std::endl;
     finals_.reserve(stream_.size());
     for (State* state : stream_) {
       int numConsistent(0);
@@ -316,41 +334,94 @@ namespace trklet {
   }
 
   // best state selection
-  void KalmanFilter::accumulator() {
+  void KalmanFilter::accumulator() 
+  {
+    // std::cout << "KalmanFilter::accumulator()" << std::endl;
     // create container of pointer to make sorts less CPU intense
     vector<Track*> finals;
     finals.reserve(finals_.size());
     transform(finals_.begin(), finals_.end(), back_inserter(finals), [](Track& track) { return &track; });
     // prepare arrival order
+    int k(0);
+    for (Track* track : finals)
+    {
+      output_file << k++ << ", " << track->numConsistent_ << ", " << track->numConsistentPS_ << ", " << track->trackId_ << ", " << isAssociatedToSingleTP(track) << std::endl;
+    }
+    
     vector<int> trackIds;
     trackIds.reserve(tracks_.size());
-    for (Track* track : finals) {
+
+    for (Track* track : finals) 
+    {
       const int trackId = track->trackId_;
       if (find_if(trackIds.begin(), trackIds.end(), [trackId](int id) { return id == trackId; }) == trackIds.end())
         trackIds.push_back(trackId);
     }
+
     // sort in number of consistent stubs
     auto moreConsistentLayers = [](Track* lhs, Track* rhs) { return lhs->numConsistent_ > rhs->numConsistent_; };
     stable_sort(finals.begin(), finals.end(), moreConsistentLayers);
+
     // sort in number of consistent ps stubs
     auto moreConsistentLayersPS = [](Track* lhs, Track* rhs) { return lhs->numConsistentPS_ > rhs->numConsistentPS_; };
     stable_sort(finals.begin(), finals.end(), moreConsistentLayersPS);
+
     // sort in track id as arrived
-    auto order = [&trackIds](auto lhs, auto rhs) {
+    auto order = [&trackIds](auto lhs, auto rhs) 
+    {
       const auto l = find(trackIds.begin(), trackIds.end(), lhs->trackId_);
       const auto r = find(trackIds.begin(), trackIds.end(), rhs->trackId_);
       return distance(r, l) < 0;
     };
     stable_sort(finals.begin(), finals.end(), order);
+
     // keep first state (best due to previous sorts) per track id
     const auto it =
         unique(finals.begin(), finals.end(), [](Track* lhs, Track* rhs) { return lhs->trackId_ == rhs->trackId_; });
     finals.erase(it, finals.end());
+
     // apply to actual track container
     int i(0);
     for (Track* track : finals)
+    {
       finals_[i++] = *track;
+    }
     finals_.resize(i);
+
+    for (Track* track : finals)
+    {
+      std::vector<StubKF>& stubsKF_ = track->stubsKF_;
+      vector<TTStubRef> TrackObject;
+      for (auto& stub : stubsKF_)
+      {
+        StubTM Stub (stub.frame(), dataFormats_);
+        std::cout << Stub.phi() << ", " << Stub.r() << ", " << Stub.z() << std::endl;
+        auto& frame_ = stub.frame();
+        TTStubRef StubRef = frame_.first;
+        TrackObject.push_back(StubRef);
+      }
+
+      const vector<TPPtr>& tpPtrs = reconstructable->associate(TrackObject);
+      // std::cout << "Associated TPs with Track Object @ " << track << " --> " << tpPtrs.size() << std::endl;
+    }
+
+    int l(0);
+    for (Track* track : finals)
+    {
+      output_file_final << l++ << ", " << track->numConsistent_ << ", " << track->numConsistentPS_ << ", " << track->trackId_ << ", " << isAssociatedToSingleTP(track) << std::endl;
+    }
+    
+  }
+
+  bool KalmanFilter::isAssociatedToSingleTP (Track* track)
+  {
+    std::vector<TTStubRef> trackObject;
+    for (auto& stub : track->stubsKF_) 
+    {
+      trackObject.push_back(stub.frame().first);
+    }
+    const std::vector<TPPtr>& tpPtrs = reconstructable->associate(trackObject);
+    return tpPtrs.size() == 1;
   }
 
   // Transform States into output products

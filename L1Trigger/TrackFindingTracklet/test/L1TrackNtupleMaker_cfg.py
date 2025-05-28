@@ -23,7 +23,7 @@ GEOMETRY = "D98"
 # 'HYBRID_NEWKF' (baseline, 4par fit, with bit-accurate KF emulation),
 # 'HYBRID_REDUCED' to use the "Summer Chain" configuration with reduced inputs.
 # (Or legacy algos 'TMTT' or 'TRACKLET').
-L1TRKALGO = 'HYBRID'
+L1TRKALGO = 'HYBRID_NEWKF'
 
 WRITE_DATA = False
 
@@ -60,7 +60,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '133X_mcRun4_realistic_v1', '')
 # input and output
 ############################################################
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 
 #--- To use MCsamples scripts, defining functions get*data*() for easy MC access,
 #--- follow instructions in https://github.com/cms-L1TK/MCsamples
@@ -149,81 +149,23 @@ process.dtc = cms.Path(process.StubAssociator + process.ProducerDTC + process.An
 
 process.load("L1Trigger.TrackFindingTracklet.L1HybridEmulationTracks_cff")
 
-# HYBRID: prompt tracking
-if (L1TRKALGO == 'HYBRID'):
-    process.TTTracksEmulation = cms.Path(process.L1THybridTracks)
-    process.TTTracksEmulationWithTruth = cms.Path(process.L1THybridTracksWithAssociators)
-    NHELIXPAR = 4
-    L1TRK_NAME  = "l1tTTTracksFromTrackletEmulation"
-    L1TRK_LABEL = "Level1TTTracks"
-    L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
-
-# HYBRID: extended tracking
-elif (L1TRKALGO == 'HYBRID_DISPLACED'):
-    process.TTTracksEmulation = cms.Path(process.L1TExtendedHybridTracks)
-    process.TTTracksEmulationWithTruth = cms.Path(process.L1TExtendedHybridTracksWithAssociators)
-    NHELIXPAR = 5
-    L1TRK_NAME  = "l1tTTTracksFromExtendedTrackletEmulation"
-    L1TRK_LABEL = "Level1TTTracks"
-    L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigisExtended"
-
-# HYBRID_NEWKF: prompt tracking or reduced
-elif (L1TRKALGO == 'HYBRID_NEWKF' or L1TRKALGO == 'HYBRID_REDUCED'):
-    process.load( 'L1Trigger.TrackFindingTracklet.Producer_cff' )
-    process.load( 'L1Trigger.TrackFindingTracklet.Analyzer_cff' )
-    NHELIXPAR = 4
-    L1TRK_NAME  = process.TrackFindingTrackletAnalyzer_params.OutputLabelTFP.value()
-    L1TRK_LABEL = process.TrackFindingTrackletProducer_params.BranchTTTracks.value()
-    L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
-    process.TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag( cms.InputTag(L1TRK_NAME, L1TRK_LABEL) )
-    process.HybridNewKF = cms.Sequence(process.L1THybridTracks + process.ProducerTM + process.ProducerDR + process.ProducerKF + process.ProducerTQ + process.ProducerTFP)
-    process.TTTracksEmulation = cms.Path(process.HybridNewKF)
-    #process.TTTracksEmulationWithTruth = cms.Path(process.HybridNewKF +  process.TrackTriggerAssociatorTracks)
-    # Optionally include code producing performance plots & end-of-job summary.
-    process.load( 'SimTracker.TrackTriggerAssociation.StubAssociator_cff' )
-    process.TTTracksEmulationWithTruth = cms.Path(process.HybridNewKF +  process.TrackTriggerAssociatorTracks + process.StubAssociator +  process.AnalyzerTracklet + process.AnalyzerTM + process.AnalyzerDR + process.AnalyzerKF + process.AnalyzerTQ + process.AnalyzerTFP )
-    from L1Trigger.TrackFindingTracklet.Customize_cff import *
-    if (L1TRKALGO == 'HYBRID_NEWKF'):
-        fwConfig( process )
-    if (L1TRKALGO == 'HYBRID_REDUCED'):
-        reducedConfig( process )
-    # Needed by L1TrackNtupleMaker
-    process.HitPatternHelperSetup.useNewKF = True
-
-# LEGACY ALGORITHM (EXPERTS ONLY): TRACKLET
-elif (L1TRKALGO == 'TRACKLET'):
-    print("\n WARNING: This is not the baseline algorithm! Prefer HYBRID or HYBRID_DISPLACED!")
-    print("\n To run the Tracklet-only algorithm, ensure you have commented out 'CXXFLAGS=-DUSEHYBRID' in BuildFile.xml & recompiled! \n")
-    process.TTTracksEmulation = cms.Path(process.L1THybridTracks)
-    process.TTTracksEmulationWithTruth = cms.Path(process.L1THybridTracksWithAssociators)
-    from L1Trigger.TrackFindingTracklet.Customize_cff import *
-    trackletConfig( process )
-    NHELIXPAR = 4
-    L1TRK_NAME  = "l1tTTTracksFromTrackletEmulation"
-    L1TRK_LABEL = "Level1TTTracks"
-    L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
-
-# LEGACY ALGORITHM (EXPERTS ONLY): TMTT
-elif (L1TRKALGO == 'TMTT'):
-    print("\n WARNING: This is not the baseline algorithm! Prefer HYBRID or HYBRID_DISPLACED! \n")
-    process.load("L1Trigger.TrackFindingTMTT.TMTrackProducer_Ultimate_cff")
-    L1TRK_PROC  =  process.TMTrackProducer
-    L1TRK_NAME  = "TMTrackProducer"
-    L1TRK_LABEL = "TML1TracksKF4ParamsComb"
-    L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
-    NHELIXPAR = 4
-    L1TRK_PROC.EnableMCtruth = cms.bool(False) # Reduce CPU use by disabling internal histos.
-    L1TRK_PROC.EnableHistos  = cms.bool(False)
-    process.load("RecoVertex.BeamSpotProducer.BeamSpot_cfi")
-    process.load("SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff")
-    process.TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag( cms.InputTag(L1TRK_NAME, L1TRK_LABEL) )
-    process.TTTracksEmulation = cms.Path(process.offlineBeamSpot*L1TRK_PROC)
-    process.TTTracksEmulationWithTruth = cms.Path(process.offlineBeamSpot*L1TRK_PROC*process.TrackTriggerAssociatorTracks)
-
-else:
-    print("ERROR: Unknown L1TRKALGO option")
-    exit(1)
-
+process.load( 'L1Trigger.TrackFindingTracklet.Producer_cff' )
+process.load( 'L1Trigger.TrackFindingTracklet.Analyzer_cff' )
+NHELIXPAR = 4
+L1TRK_NAME  = process.TrackFindingTrackletAnalyzer_params.OutputLabelTFP.value()
+L1TRK_LABEL = process.TrackFindingTrackletProducer_params.BranchTTTracks.value()
+L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
+process.TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag( cms.InputTag(L1TRK_NAME, L1TRK_LABEL) )
+process.HybridNewKF = cms.Sequence(process.L1THybridTracks + process.ProducerTM + process.ProducerDR + process.ProducerKF + process.ProducerTQ + process.ProducerTFP)
+process.TTTracksEmulation = cms.Path(process.HybridNewKF)
+#process.TTTracksEmulationWithTruth = cms.Path(process.HybridNewKF +  process.TrackTriggerAssociatorTracks)
+# Optionally include code producing performance plots & end-of-job summary.
+process.load( 'SimTracker.TrackTriggerAssociation.StubAssociator_cff' )
+process.TTTracksEmulationWithTruth = cms.Path(process.StubAssociator + process.HybridNewKF +  process.TrackTriggerAssociatorTracks +  process.AnalyzerTracklet + process.AnalyzerTM + process.AnalyzerDR + process.AnalyzerKF + process.AnalyzerTQ + process.AnalyzerTFP )
+from L1Trigger.TrackFindingTracklet.Customize_cff import *
+fwConfig( process )
+# Needed by L1TrackNtupleMaker
+process.HitPatternHelperSetup.useNewKF = True
 
 # Define L1 track ntuple maker
 from L1Trigger.TrackFindingTracklet.L1TrackNtupleMaker_cfi import *
@@ -234,7 +176,6 @@ process.L1TrackNtuple = L1TrackNtupleMaker.clone(
 )
 
 process.ana = cms.Path(process.L1TrackNtuple)
-
 
 ############################################################
 # final schedule of what is to be run
@@ -247,29 +188,4 @@ process.ana = cms.Path(process.L1TrackNtuple)
 # process.schedule = cms.Schedule(process.TTClusterStubTruth,process.dtc,process.TTTracksEmulationWithTruth,process.ana)
 
 # use this to only run tracking + track associator
-process.schedule = cms.Schedule(process.dtc,process.TTTracksEmulationWithTruth,process.ana)
-
-
-############################################################
-# write output dataset?
-############################################################
-
-if (WRITE_DATA):
-  process.writeDataset = cms.OutputModule("PoolOutputModule",
-      splitLevel = cms.untracked.int32(0),
-      eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-      outputCommands = process.RAWSIMEventContent.outputCommands,
-      fileName = cms.untracked.string('output_dataset.root'), ## ADAPT IT ##
-      dataset = cms.untracked.PSet(
-          filterName = cms.untracked.string(''),
-          dataTier = cms.untracked.string('GEN-SIM')
-      )
-  )
-  process.writeDataset.outputCommands.append('keep  *TTTrack*_*_*_*')
-  process.writeDataset.outputCommands.append('keep  *TTStub*_*_*_*')
-
-  process.pd = cms.EndPath(process.writeDataset)
-  process.schedule.append(process.pd)
-
-
-
+process.schedule = cms.Schedule(process.dtc, process.TTTracksEmulationWithTruth, process.ana)

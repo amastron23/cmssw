@@ -16,6 +16,7 @@
 #include "L1Trigger/TrackFindingTracklet/interface/KalmanFilter.h"
 #include "L1Trigger/TrackFindingTMTT/interface/Settings.h"
 #include "L1Trigger/TrackFindingTMTT/interface/KFParamsComb.h"
+#include <fstream>
 
 #include <string>
 #include <vector>
@@ -54,6 +55,10 @@ namespace trklet {
     // ED output token for number of accepted and lost States
     EDPutTokenT<int> edPutTokenNumStatesAccepted_;
     EDPutTokenT<int> edPutTokenNumStatesTruncated_;
+      // ED input token of TTStubRef to TPPtr association for tracking efficiency
+    EDGetTokenT<StubAssociation> edGetTokenSelection_;
+    // ED input token of TTStubRef to recontructable TPPtr association
+    EDGetTokenT<StubAssociation> edGetTokenReconstructable_;
     // Setup token
     ESGetToken<Setup, SetupRcd> esGetTokenSetup_;
     // DataFormats token
@@ -106,6 +111,10 @@ namespace trklet {
     // book ES products
     esGetTokenSetup_ = esConsumes<Setup, SetupRcd, Transition::BeginRun>();
     esGetTokenDataFormats_ = esConsumes<DataFormats, DataFormatsRcd, Transition::BeginRun>();
+    const auto& inputTagSelecttion = iConfig.getParameter<InputTag>("InputTagSelectionn");
+    const auto& inputTagReconstructable = iConfig.getParameter<InputTag>("InputTagReconstructablee");
+    edGetTokenSelection_ = consumes<StubAssociation>(inputTagSelecttion);
+    edGetTokenReconstructable_ = consumes<StubAssociation>(inputTagReconstructable);
   }
 
   void ProducerKF::beginRun(const Run& iRun, const EventSetup& iSetup) {
@@ -118,16 +127,19 @@ namespace trklet {
     settings_.setMagneticField(setup_->bField());
   }
 
-  void ProducerKF::produce(Event& iEvent, const EventSetup& iSetup) {
+  void ProducerKF::produce(Event& iEvent, const EventSetup& iSetup) 
+  {
     auto valid = [](int sum, const FrameTrack& f) { return sum += (f.first.isNull() ? 0 : 1); };
     static const int numRegions = setup_->numRegions();
     static const int numLayers = setup_->numLayers();
     // empty KF products
+    
     StreamsStub streamsStub(numRegions * numLayers);
     StreamsTrack streamsTrack(numRegions);
     int numStatesAccepted(0);
     int numStatesTruncated(0);
     // read in DR Product and produce KF product
+    
     Handle<StreamsStub> handleStubs;
     iEvent.getByToken<StreamsStub>(edGetTokenStubs_, handleStubs);
     const StreamsStub& stubs = *handleStubs;
@@ -148,14 +160,33 @@ namespace trklet {
           if (frame.first.isNonnull())
             ttTrackRefs.push_back(frame.first);
     }
-    for (int region = 0; region < setup_->numRegions(); region++) {
+
+    const StubAssociation* selection = nullptr;
+    const StubAssociation* reconstructable = nullptr;
+    Handle<StubAssociation> handleSelection;
+    iEvent.getByToken<StubAssociation>(edGetTokenSelection_, handleSelection);
+    selection = handleSelection.product();
+    Handle<StubAssociation> handleReconstructable;
+    iEvent.getByToken<StubAssociation>(edGetTokenReconstructable_, handleReconstructable);
+    reconstructable = handleReconstructable.product();
+
+    for (int region = 0; region < setup_->numRegions(); region++) 
+    {
+      std::ofstream output; output.open("Region_" + std::to_string(region) + ".txt");
+      output << "Region #" << region << std::endl;
+      std::cout << "Region #" << region << std::endl;
+
+      std::ofstream output_final; output_final.open("Region_" + std::to_string(region) + "_Final.txt");
+      output_final << "Region #" << region << std::endl;
+
       // object to fit tracks in a processing region
-      KalmanFilter kf(iConfig_, setup_, dataFormats_, &kalmanFilterFormats_, &settings_, tmtt_, region, ttTracks);
+      KalmanFilter kf (iConfig_, setup_, dataFormats_, &kalmanFilterFormats_, &settings_, tmtt_, region, ttTracks, selection, reconstructable, output, output_final);
       // read in and organize input tracks and stubs
       kf.consume(tracks, stubs);
       // fill output products
       kf.produce(streamsStub, streamsTrack, numStatesAccepted, numStatesTruncated);
     }
+
     if (use5ParameterFit_) {
       // store ttTracks
       const OrphanHandle<TTTracks> oh = iEvent.emplace(edPutTokenTTTracks_, move(ttTracks));

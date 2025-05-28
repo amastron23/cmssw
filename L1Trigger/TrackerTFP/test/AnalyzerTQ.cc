@@ -163,11 +163,11 @@ namespace trackerTFP {
       reconstructable = handleReconstructable.product();
     }
     // analyze ht products and associate found tracks with reconstrucable TrackingParticles
-    set<TPPtr> tpPtrs;
-    set<TPPtr> tpPtrsSelection;
-    set<TPPtr> tpPtrsMax;
-    int allMatched(0);
-    int allTracks(0);
+    set<TPPtr>     tpPtrs;
+    set<TPPtr>     tpPtrsSelection;
+    set<TPPtr>     tpPtrsMax;
+    int allMatched (0);
+    int allTracks  (0);
     for (int region = 0; region < setup_->numRegions(); region++) {
       vector<vector<TTStubRef>> tracks;
       formTracks(acceptedTracks, acceptedStubs, tracks, region);
@@ -265,10 +265,13 @@ namespace trackerTFP {
                              set<TPPtr>& tps,
                              int& sum,
                              bool perfect) const {
-    for (const vector<TTStubRef>& ttStubRefs : tracks) {
+    for (const vector<TTStubRef>& ttStubRefs : tracks)
+    {
       const vector<TPPtr>& tpPtrs = perfect ? ass->associateFinal(ttStubRefs) : ass->associate(ttStubRefs);
+
       if (tpPtrs.empty())
         continue;
+      
       sum++;
       copy(tpPtrs.begin(), tpPtrs.end(), inserter(tps, tps.begin()));
     }
