@@ -17,6 +17,9 @@
 #include <string>
 #include <numeric>
 
+#include <TFile.h>
+#include <TTree.h>
+
 using namespace std;
 using namespace edm;
 using namespace tt;
@@ -32,7 +35,15 @@ namespace trackerTFP {
   class ProducerTQ : public stream::EDProducer<> {
   public:
     explicit ProducerTQ(const ParameterSet&);
-    ~ProducerTQ() override {}
+    ~ProducerTQ() override 
+    {
+      if (file_) 
+      {
+        file_->Write();
+        file_->Close();
+        delete file_;
+      }
+    }
     void beginRun(const Run&, const EventSetup&) override;
     void produce(Event&, const EventSetup&) override;
     void endJob() {}
@@ -61,12 +72,35 @@ namespace trackerTFP {
     const DataFormats* dataFormats_ = nullptr;
     // helper class to determine Track Quality
     const TrackQuality* trackQuality_ = nullptr;
+
+    bool produceAttributes_;
+    TFile* file_ = nullptr;
+    TTree* tree_ = nullptr;
+
+    std::vector<double> z0, cot, chi2rz, chi2rphi, chi2bend, n_lay_miss, nstub;
+
   };
 
   ProducerTQ::ProducerTQ(const ParameterSet& iConfig) {
     const string& label = iConfig.getParameter<string>("InputLabelTQ");
     const string& branchStubs = iConfig.getParameter<string>("BranchStubs");
     const string& branchTracks = iConfig.getParameter<string>("BranchTracks");
+
+    produceAttributes_ = iConfig.getParameter<bool>("ProduceAttributeFile");
+
+    if (produceAttributes_) 
+    {
+      file_ = TFile::Open("TQAttributes.root", "RECREATE");
+      tree_ = new TTree("TQTree", "Track Quality Attributes");
+      tree_->Branch("TrackVertex",     &z0);
+      tree_->Branch("TrackTanL",       &cot);
+      tree_->Branch("TrackChi2Rz",     &chi2rz);
+      tree_->Branch("TrackChi2RPhi",   &chi2rphi);
+      tree_->Branch("TrackChi2Bend",   &chi2bend);
+      tree_->Branch("TrackNLayMissed", &n_lay_miss);
+      tree_->Branch("TrackNStubs",     &nstub);
+    }
+
     // book in- and output ED products
     edGetTokenStubs_ = consumes<StreamsStub>(InputTag(label, branchStubs));
     edGetTokenTracks_ = consumes<StreamsTrack>(InputTag(label, branchTracks));
@@ -123,6 +157,18 @@ namespace trackerTFP {
         for (int layer = 0; layer < numLayers; layer++)
           streamStub.push_back(streamsStubs[offsetLayer + layer][frame]);
         tracks.emplace_back(frameTrack, streamStub, trackQuality_);
+
+        if (produceAttributes_) 
+        {
+          z0.push_back((&tracks.back())->a_z0);
+          cot.push_back((&tracks.back())->a_cot);
+          chi2rz.push_back((&tracks.back())->a_chi2rz);
+          chi2rphi.push_back((&tracks.back())->a_chi2rphi);
+          chi2bend.push_back((&tracks.back())->a_chi2bend);
+          n_lay_miss.push_back((&tracks.back())->a_nlay_miss);
+          nstub.push_back((&tracks.back())->a_nstub);
+        }
+
         stream.push_back(&tracks.back());
       }
       // fill TQ product
@@ -144,6 +190,20 @@ namespace trackerTFP {
           outputStubs[offsetLayer + layer].emplace_back(track->streamStub_[layer]);
       }
     }
+
+    if (produceAttributes_) 
+    {
+      tree_->Fill();
+
+      z0.clear();
+      cot.clear();
+      chi2rz.clear();
+      chi2rphi.clear();
+      chi2bend.clear();
+      n_lay_miss.clear();
+      nstub.clear();
+    }
+
     // store TQ product
     iEvent.emplace(edPutTokenTracks_, move(outputTracks));
     iEvent.emplace(edPutTokenTracksAdd_, move(outputTracksAdd));

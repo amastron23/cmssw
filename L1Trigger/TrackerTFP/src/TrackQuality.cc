@@ -152,6 +152,15 @@ namespace trackerTFP {
     // collect features and classify using bdt
     const vector<ap_fixed<10, 5>>& output = bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
     const float mva = output[0].to_float();
+
+    a_z0 = track.zT() - setup->chosenRofZ() * track.cot();
+    a_cot = track.cot();
+    a_chi2rz = trackchi2rz;
+    a_chi2rphi = trackchi2rphi;
+    a_chi2bend = ttTrack.chi2Bend();
+    a_nlay_miss = n_missint;
+    a_nstub = nstub;
+    
     // fill frame
     string hits = hitPattern.str();
     reverse(hits.begin(), hits.end());
