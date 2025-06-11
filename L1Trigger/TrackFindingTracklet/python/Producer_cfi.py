@@ -20,5 +20,7 @@ TrackFindingTrackletProducer_params = cms.PSet (
   ApplyNonLinearCorrection = cms.bool  ( True  ),                              # 
   Use5ParameterFit         = cms.bool  ( False ),                              # double precision simulation of 5 parameter fit instead of bit accurate emulation of 4 parameter fit
   UseKFsimmulation         = cms.bool  ( False ),                              # simulate KF instead of emulate
-  ProduceAttributeFile     = cms.bool  ( True )
+  ProduceAttributeFile     = cms.bool  ( True ),
+  ReconstructableAssociation = cms.InputTag("StubAssociator", "Reconstructable"),#
+  SimpleAssociation        = cms.InputTag("StubAssociator", "UseForAlgEff")    #
 )

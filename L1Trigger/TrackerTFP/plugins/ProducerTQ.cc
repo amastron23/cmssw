@@ -9,6 +9,7 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/Common/interface/Handle.h"
+#include "SimTracker/TrackTriggerAssociation/interface/StubAssociation.h"
 
 #include "L1Trigger/TrackTrigger/interface/Setup.h"
 #include "L1Trigger/TrackerTFP/interface/DataFormats.h"
@@ -19,6 +20,7 @@
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TH1D.h>
 
 using namespace std;
 using namespace edm;
@@ -39,6 +41,7 @@ namespace trackerTFP {
     {
       if (file_) 
       {
+        fake_rate->Write();
         file_->Write();
         file_->Close();
         delete file_;
@@ -49,6 +52,7 @@ namespace trackerTFP {
     void endJob() {}
 
   private:
+
     typedef TrackQuality::Track Track;
     // ED input token of kf stubs
     EDGetTokenT<StreamsStub> edGetTokenStubs_;
@@ -72,23 +76,44 @@ namespace trackerTFP {
     const DataFormats* dataFormats_ = nullptr;
     // helper class to determine Track Quality
     const TrackQuality* trackQuality_ = nullptr;
+    // ED input token of TTStubRef to TPPtr association for tracking efficiency
+    EDGetTokenT<StubAssociation> edGetTokenSelection_;
+    // ED input token of TTStubRef to recontructable TPPtr association
+    EDGetTokenT<StubAssociation> edGetTokenReconstructable_;
 
     bool produceAttributes_;
     TFile* file_ = nullptr;
     TTree* tree_ = nullptr;
 
-    std::vector<double> z0, cot, chi2rz, chi2rphi, chi2bend, n_lay_miss, nstub;
+    std::vector<double> z0, cot, chi2rz, chi2rphi, chi2bend, n_lay_miss, nstub, real;
+    TH1D* fake_rate;
+
+    const bool is_real (const StreamStub& streamStub_, const StubAssociation* reconstructable, const StubAssociation* selection) 
+    {
+      vector<TTStubRef> Track_;
+
+      for (auto& stub_ : streamStub_)
+      {
+        Track_.push_back(stub_.first);
+      }
+
+      const vector<TPPtr>& tpPtrs = reconstructable->associate(Track_);
+
+      return (tpPtrs.size() != 0);
+    }
 
   };
 
-  ProducerTQ::ProducerTQ(const ParameterSet& iConfig) {
+  ProducerTQ::ProducerTQ(const ParameterSet& iConfig) 
+  {
+
     const string& label = iConfig.getParameter<string>("InputLabelTQ");
     const string& branchStubs = iConfig.getParameter<string>("BranchStubs");
     const string& branchTracks = iConfig.getParameter<string>("BranchTracks");
 
     produceAttributes_ = iConfig.getParameter<bool>("ProduceAttributeFile");
 
-    if (produceAttributes_) 
+    if (produceAttributes_)
     {
       file_ = TFile::Open("TQAttributes.root", "RECREATE");
       tree_ = new TTree("TQTree", "Track Quality Attributes");
@@ -99,6 +124,8 @@ namespace trackerTFP {
       tree_->Branch("TrackChi2Bend",   &chi2bend);
       tree_->Branch("TrackNLayMissed", &n_lay_miss);
       tree_->Branch("TrackNStubs",     &nstub);
+      tree_->Branch("Real",            &real);
+      fake_rate = new TH1D("fake_rate", "; Fake Rate; Frequency", 100, 0, 1);
     }
 
     // book in- and output ED products
@@ -107,13 +134,20 @@ namespace trackerTFP {
     edPutTokenTracks_ = produces<StreamsTrack>(branchTracks);
     edPutTokenTracksAdd_ = produces<Streams>(branchTracks);
     edPutTokenStubs_ = produces<StreamsStub>(branchStubs);
+
+    const auto& inputTagSelecttion = iConfig.getParameter<InputTag>("SimpleAssociation");
+    const auto& inputTagReconstructable = iConfig.getParameter<InputTag>("ReconstructableAssociation");
+    edGetTokenSelection_ = consumes<StubAssociation>(inputTagSelecttion);
+    edGetTokenReconstructable_ = consumes<StubAssociation>(inputTagReconstructable);
+
     // book ES products
     esGetTokenSetup_ = esConsumes<Setup, SetupRcd, Transition::BeginRun>();
     esGetTokenDataFormats_ = esConsumes<DataFormats, DataFormatsRcd, Transition::BeginRun>();
     esGetTokenTrackQuality_ = esConsumes<TrackQuality, TrackQualityRcd, Transition::BeginRun>();
   }
 
-  void ProducerTQ::beginRun(const Run& iRun, const EventSetup& iSetup) {
+  void ProducerTQ::beginRun(const Run& iRun, const EventSetup& iSetup) 
+  {
     // helper class to store configurations
     setup_ = &iSetup.getData(esGetTokenSetup_);
     // helper class to extract structured data from tt::Frames
@@ -122,14 +156,28 @@ namespace trackerTFP {
     trackQuality_ = &iSetup.getData(esGetTokenTrackQuality_);
   }
 
-  void ProducerTQ::produce(Event& iEvent, const EventSetup& iSetup) {
+  void ProducerTQ::produce(Event& iEvent, const EventSetup& iSetup) 
+  {
+    const StubAssociation* selection = nullptr;
+    const StubAssociation* reconstructable = nullptr;
+
+    Handle<StubAssociation> handleSelection;
+    iEvent.getByToken<StubAssociation>(edGetTokenSelection_, handleSelection);
+    selection = handleSelection.product();
+
+    Handle<StubAssociation> handleReconstructable;
+    iEvent.getByToken<StubAssociation>(edGetTokenReconstructable_, handleReconstructable);
+    reconstructable = handleReconstructable.product();
+
     static const int numRegions = setup_->numRegions();
     static const int numLayers = setup_->numLayers();
     auto valid = [](int sum, const FrameTrack& frame) { return sum += (frame.first.isNull() ? 0 : 1); };
+
     // empty TQ product
     StreamsTrack outputTracks(numRegions);
     Streams outputTracksAdd(numRegions);
     StreamsStub outputStubs(numRegions * numLayers);
+
     // read in KF Product and produce TQ product
     Handle<StreamsStub> handleStubs;
     iEvent.getByToken<StreamsStub>(edGetTokenStubs_, handleStubs);
@@ -137,7 +185,9 @@ namespace trackerTFP {
     Handle<StreamsTrack> handleTracks;
     iEvent.getByToken<StreamsTrack>(edGetTokenTracks_, handleTracks);
     const StreamsTrack& streamsTracks = *handleTracks.product();
-    for (int region = 0; region < numRegions; region++) {
+
+    for (int region = 0; region < numRegions; region++) 
+    {
       // calculate track quality
       const int offsetLayer = region * numLayers;
       const StreamTrack& streamTrack = streamsTracks[region];
@@ -146,44 +196,62 @@ namespace trackerTFP {
       tracks.reserve(nTracks);
       vector<Track*> stream;
       stream.reserve(streamTrack.size());
-      for (int frame = 0; frame < (int)streamTrack.size(); frame++) {
+      int matched = 0;
+
+      for (int frame = 0; frame < (int)streamTrack.size(); frame++) 
+      {
         const FrameTrack& frameTrack = streamTrack[frame];
-        if (frameTrack.first.isNull()) {
+        if (frameTrack.first.isNull()) 
+        {
           stream.push_back(nullptr);
           continue;
         }
+
         StreamStub streamStub;
         streamStub.reserve(numLayers);
         for (int layer = 0; layer < numLayers; layer++)
+        {
           streamStub.push_back(streamsStubs[offsetLayer + layer][frame]);
+        }
+
+        bool real_ = is_real (streamStub, reconstructable, selection);
+        matched += (int)(real_);
         tracks.emplace_back(frameTrack, streamStub, trackQuality_);
 
         if (produceAttributes_) 
         {
-          z0.push_back((&tracks.back())->a_z0);
-          cot.push_back((&tracks.back())->a_cot);
-          chi2rz.push_back((&tracks.back())->a_chi2rz);
-          chi2rphi.push_back((&tracks.back())->a_chi2rphi);
-          chi2bend.push_back((&tracks.back())->a_chi2bend);
+          z0.push_back        ((&tracks.back())->a_z0);
+          cot.push_back       ((&tracks.back())->a_cot);
+          chi2rz.push_back    ((&tracks.back())->a_chi2rz);
+          chi2rphi.push_back  ((&tracks.back())->a_chi2rphi);
+          chi2bend.push_back  ((&tracks.back())->a_chi2bend);
           n_lay_miss.push_back((&tracks.back())->a_nlay_miss);
-          nstub.push_back((&tracks.back())->a_nstub);
+          nstub.push_back     ((&tracks.back())->a_nstub);
+          real.push_back      ((double)real_);
         }
 
         stream.push_back(&tracks.back());
       }
+
+      fake_rate->Fill( (double)(nTracks - matched) / (double)(nTracks) );
+
       // fill TQ product
       outputTracks[region].reserve(stream.size());
       outputTracksAdd[region].reserve(stream.size());
       for (int layer = 0; layer < setup_->numLayers(); layer++)
         outputStubs[offsetLayer + layer].reserve(stream.size());
-      for (Track* track : stream) {
-        if (!track) {
+      
+      for (Track* track : stream) 
+      {
+        if (!track) 
+        {
           outputTracks[region].emplace_back(FrameTrack());
           outputTracksAdd[region].emplace_back(Frame());
           for (int layer = 0; layer < setup_->numLayers(); layer++)
             outputStubs[offsetLayer + layer].emplace_back(FrameStub());
           continue;
         }
+
         outputTracks[region].emplace_back(track->frameTrack_);
         outputTracksAdd[region].emplace_back(track->frame_);
         for (int layer = 0; layer < setup_->numLayers(); layer++)
@@ -194,7 +262,6 @@ namespace trackerTFP {
     if (produceAttributes_) 
     {
       tree_->Fill();
-
       z0.clear();
       cot.clear();
       chi2rz.clear();
@@ -202,6 +269,7 @@ namespace trackerTFP {
       chi2bend.clear();
       n_lay_miss.clear();
       nstub.clear();
+      real.clear();
     }
 
     // store TQ product

@@ -157,15 +157,12 @@ L1TRK_LABEL = process.TrackFindingTrackletProducer_params.BranchTTTracks.value()
 L1TRUTH_NAME = "TTTrackAssociatorFromPixelDigis"
 process.TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag( cms.InputTag(L1TRK_NAME, L1TRK_LABEL) )
 process.HybridNewKF = cms.Sequence(process.L1THybridTracks + process.ProducerTM + process.ProducerDR + process.ProducerKF + process.ProducerTQ + process.ProducerTFP)
-process.TTTracksEmulation = cms.Path(process.HybridNewKF)
+process.TTTracksEmulation = cms.Path(process.StubAssociator + process.HybridNewKF)
 #process.TTTracksEmulationWithTruth = cms.Path(process.HybridNewKF +  process.TrackTriggerAssociatorTracks)
 # Optionally include code producing performance plots & end-of-job summary.
 process.load( 'SimTracker.TrackTriggerAssociation.StubAssociator_cff' )
-process.TTTracksEmulationWithTruth = cms.Path(process.HybridNewKF +  process.TrackTriggerAssociatorTracks + process.StubAssociator +  process.AnalyzerTracklet + process.AnalyzerTM + process.AnalyzerDR + process.AnalyzerKF + process.AnalyzerTQ + process.AnalyzerTFP )
+process.TTTracksEmulationWithTruth = cms.Path(process.StubAssociator + process.HybridNewKF + process.TrackTriggerAssociatorTracks + process.AnalyzerTracklet + process.AnalyzerTM + process.AnalyzerDR + process.AnalyzerKF + process.AnalyzerTQ + process.AnalyzerTFP )
 from L1Trigger.TrackFindingTracklet.Customize_cff import *
-if (L1TRKALGO == 'HYBRID_NEWKF'):
-    fwConfig( process )
-if (L1TRKALGO == 'HYBRID_REDUCED'):
-    reducedConfig( process )
+fwConfig( process )
 # Needed by L1TrackNtupleMaker
 process.HitPatternHelperSetup.useNewKF = True
