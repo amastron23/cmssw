@@ -259,7 +259,7 @@ namespace trackerTFP {
       }
     }
 
-    if (produceAttributes_) 
+    if (produceAttributes_)
     {
       tree_->Fill();
       z0.clear();
