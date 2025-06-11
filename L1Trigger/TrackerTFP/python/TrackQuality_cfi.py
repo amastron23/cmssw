@@ -5,7 +5,7 @@ import FWCore.ParameterSet.Config as cms
 TrackQuality_params = cms.PSet(
   # This emulation GBDT is optimised for the HYBRID_NEWKF emulation and works with the emulation of the KF out module
   # It is compatible with the HYBRID simulation and will give equivilant performance with this workflow
-  Model = cms.FileInPath( "L1Trigger/TrackTrigger/data/L1_TrackQuality_GBDT_emulation_digitized.json" ),
+  Model = cms.FileInPath( "L1Trigger/TrackFindingTracklet/test/latest_model.json" ),
   #Vector of strings of training features, in the order that the model was trained with
   FeatureNames = cms.vstring( ["tanl",
                                "z0_scaled",

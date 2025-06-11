@@ -186,16 +186,16 @@ namespace trackerTFP {
     iEvent.getByToken<StreamsTrack>(edGetTokenTracks_, handleTracks);
     const StreamsTrack& streamsTracks = *handleTracks.product();
 
-    for (int region = 0; region < numRegions; region++) 
+    for (int region = 0; region < numRegions; region++)
     {
       // calculate track quality
       const int offsetLayer = region * numLayers;
       const StreamTrack& streamTrack = streamsTracks[region];
       const int nTracks = accumulate(streamTrack.begin(), streamTrack.end(), 0, valid);
-      vector<Track> tracks;
-      tracks.reserve(nTracks);
+      vector<Track>  tracks;
+      tracks.reserve (nTracks);
       vector<Track*> stream;
-      stream.reserve(streamTrack.size());
+      stream.reserve (streamTrack.size());
       int matched = 0;
 
       for (int frame = 0; frame < (int)streamTrack.size(); frame++) 
@@ -228,6 +228,7 @@ namespace trackerTFP {
           n_lay_miss.push_back((&tracks.back())->a_nlay_miss);
           nstub.push_back     ((&tracks.back())->a_nstub);
           real.push_back      ((double)real_);
+          std::cout << (real_) << ", " << (&tracks.back())->mva_ << std::endl;
         }
 
         stream.push_back(&tracks.back());

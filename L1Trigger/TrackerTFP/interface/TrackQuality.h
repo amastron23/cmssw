@@ -91,7 +91,9 @@ namespace trackerTFP {
              a_chi2rphi, 
              a_chi2bend, 
              a_nlay_miss, 
-             a_nstub; 
+             a_nstub;
+      
+      double mva_;
 
       bool track_real;
       

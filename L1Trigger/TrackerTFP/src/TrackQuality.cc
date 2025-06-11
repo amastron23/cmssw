@@ -155,10 +155,11 @@ namespace trackerTFP {
     const int chi2rz = tq->toBinchi2rz(trackchi2rz);
 
     // load in bdt
-    conifer::BDT<ap_fixed<10, 5>, ap_fixed<10, 5>> bdt(tq->model().fullPath());
+    conifer::BDT<ap_fixed<20, 6>, ap_fixed<20, 6>> bdt(tq->model().fullPath());
     // collect features and classify using bdt
-    const vector<ap_fixed<10, 5>>& output = bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
-    const float mva = output[0].to_float();
+
+    const ap_fixed<20, 6>& MVA = bdt.decision_function({nstub, z0, cot, chi2rphi, chi2rz, chi2B, n_missint }).at(0);
+    ap_int<20> mva_raw = MVA.range(MVA.width - 1, 0);
 
     // assign attributes to track object.
     a_z0        = track.zT() - setup->chosenRofZ() * track.cot();
@@ -168,6 +169,7 @@ namespace trackerTFP {
     a_chi2bend  = trackchi2bend;
     a_nlay_miss = n_missint;
     a_nstub     = nstub;
+    mva_ = static_cast<int>(mva_raw);
     
     // fill frame
     string hits = hitPattern.str();
