@@ -228,7 +228,7 @@ namespace trackerTFP {
           n_lay_miss.push_back((&tracks.back())->a_nlay_miss);
           nstub.push_back     ((&tracks.back())->a_nstub);
           real.push_back      ((double)real_);
-          std::cout << (real_) << ", " << (&tracks.back())->mva_ << std::endl;
+          // std::cout << (real_) << ", " << (&tracks.back())->mva_ << std::endl;
         }
 
         stream.push_back(&tracks.back());

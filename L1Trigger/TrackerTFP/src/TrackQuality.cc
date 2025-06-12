@@ -169,7 +169,7 @@ namespace trackerTFP {
     a_chi2bend  = trackchi2bend;
     a_nlay_miss = n_missint;
     a_nstub     = nstub;
-    mva_ = static_cast<int>(mva_raw);
+    mva_        = static_cast<int>(mva_raw);
     
     // fill frame
     string hits = hitPattern.str();
