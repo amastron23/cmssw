@@ -158,9 +158,6 @@ namespace trackerTFP {
     conifer::BDT<ap_fixed<20, 6>, ap_fixed<20, 6>> bdt(tq->model().fullPath());
     // collect features and classify using bdt
 
-    const ap_fixed<20, 6>& MVA = bdt.decision_function({nstub, z0, cot, chi2rphi, chi2rz, chi2B, n_missint }).at(0);
-    ap_int<20> mva_raw = MVA.range(MVA.width - 1, 0);
-
     // assign attributes to track object.
     a_z0        = track.zT() - setup->chosenRofZ() * track.cot();
     a_cot       = track.cot();
@@ -169,6 +166,18 @@ namespace trackerTFP {
     a_chi2bend  = trackchi2bend;
     a_nlay_miss = n_missint;
     a_nstub     = nstub;
+
+    ap_fixed<20, 6> aa_nstub      = a_nstub;
+    ap_fixed<20, 6> aa_z0         = a_z0;
+    ap_fixed<20, 6> aa_cot        = a_cot;
+    ap_fixed<20, 6> aa_chi2rphi   = a_chi2rphi;
+    ap_fixed<20, 6> aa_chi2rz     = a_chi2rz;
+    ap_fixed<20, 6> aa_chi2bend   = a_chi2bend;
+    ap_fixed<20, 6> aa_nlay_miss  = a_nlay_miss;
+
+    const ap_fixed<20, 6>& MVA = bdt.decision_function({aa_nstub, aa_z0, aa_cot, aa_chi2rphi, aa_chi2rz, aa_chi2bend, aa_nlay_miss }).at(0);
+    ap_int<20> mva_raw = MVA.range(MVA.width - 1, 0);
+
     mva_        = static_cast<int>(mva_raw);
     
     // fill frame

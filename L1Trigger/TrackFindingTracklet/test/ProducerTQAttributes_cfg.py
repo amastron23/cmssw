@@ -1,9 +1,4 @@
-# N.B., DUE TO THE CHANGE IN STUB WINDOW SIZES WITH CMSSW 14_2_0_PRE2, THIS JOB HAS BEEN NODIFIED TO
-# RECREATE THE STUBS, WHICH IS NECESSARY WHEN RUNNING ON MONTE CARLO GENERATED WITH OLDER VERSIONS.
-
-############################################################
-# define basic process
-############################################################
+#!/cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_14_2_0_pre4/bin/el9_amd64_gcc12/cmsRun
 
 import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils
@@ -15,7 +10,7 @@ process = cms.Process("L1TrackNtuple")
 ############################################################
 
 # D88 was used for CMSSW_12_6 datasets, and D98 recommended for more recent ones.
-#GEOMETRY = "D88"
+# GEOMETRY = "D88"
 # GEOMETRY = "D98"
 GEOMETRY = "D110"
 
@@ -98,17 +93,8 @@ elif GEOMETRY == "D110":
   # Read specified .root file:
   inputMC = [
     "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/a1c0916c-3068-4935-90ad-f2f4da74ab36.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/318c440c-316c-49c3-96d0-ede7a3a139e4.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/c07df786-9969-4bfb-b656-b71c4a767fb1.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/58ceb1a7-d5c6-4d9d-9464-b453d0a1a3b3.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/ddebc50c-9628-49ee-9319-fb75c9fc346c.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/cb3055af-de3e-4146-a54d-a71a3da244b7.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/bd1a87d1-279d-48b7-9780-d4d11b8b9eea.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/91d14f51-2868-4679-8286-876e1e31ca7e.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/6677a250-f917-4724-8dc8-848cca25342a.root",
-    "/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/32d79276-4233-46ce-a6ae-4232f413b39d.root"
-  ]
-  
+    ]
+
 else:
 
   print("this is not a valid geometry!!!")
