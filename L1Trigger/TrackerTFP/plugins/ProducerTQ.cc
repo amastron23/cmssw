@@ -220,15 +220,27 @@ namespace trackerTFP {
 
         if (produceAttributes_) 
         {
-          z0.push_back        ((&tracks.back())->a_z0);
-          cot.push_back       ((&tracks.back())->a_cot);
-          chi2rz.push_back    ((&tracks.back())->a_chi2rz);
-          chi2rphi.push_back  ((&tracks.back())->a_chi2rphi);
-          chi2bend.push_back  ((&tracks.back())->a_chi2bend);
-          n_lay_miss.push_back((&tracks.back())->a_nlay_miss);
-          nstub.push_back     ((&tracks.back())->a_nstub);
-          real.push_back      ((double)real_);
-          std::cout << (real_) << ", " << (&tracks.back())->mva_ << std::endl;
+          const auto* lastTrack = &tracks.back();
+
+          z0.push_back        (lastTrack->a_z0);
+          cot.push_back       (lastTrack->a_cot);
+          chi2rz.push_back    (lastTrack->a_chi2rz);
+          chi2rphi.push_back  (lastTrack->a_chi2rphi);
+          chi2bend.push_back  (lastTrack->a_chi2bend);
+          n_lay_miss.push_back(lastTrack->a_nlay_miss);
+          nstub.push_back     (lastTrack->a_nstub);
+          real.push_back      (static_cast<double>(real_));
+
+          std::cout << lastTrack->a_nstub << ", "      // TrackNStubs
+                    << lastTrack->a_z0 << ", "         // TrackVertex
+                    << lastTrack->a_cot << ", "        // TrackTanL
+                    << lastTrack->a_chi2rphi << ", "   // TrackChi2RPhi
+                    << lastTrack->a_chi2rz << ", "     // TrackChi2Rz
+                    << lastTrack->a_chi2bend << ", "   // TrackChi2Bend
+                    << lastTrack->a_nlay_miss << ", "  // TrackNLayMissed
+                    << lastTrack->mva_ << ", "         // MVA score
+                    << real_ << std::endl;             // Truth label
+
         }
 
         stream.push_back(&tracks.back());
