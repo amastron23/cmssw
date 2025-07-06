@@ -160,12 +160,57 @@ namespace trackerTFP {
 
     // assign attributes to track object.
     a_z0        = track.zT() - setup->chosenRofZ() * track.cot();
+    a_zT        = track.zT();
     a_cot       = track.cot();
     a_chi2rz    = trackchi2rz;
     a_chi2rphi  = trackchi2rphi;
     a_chi2bend  = trackchi2bend;
     a_nlay_miss = n_missint;
     a_nstub     = nstub;
+
+
+    //// Covers HitPattern to Vivado ////
+    // std::bitset<64> bs = hitPattern.bs();
+    // std::string last8 = bs.to_string().substr(56, 8);
+    // std::reverse(last8.begin(), last8.end());
+    // uint8_t val = static_cast<uint8_t>(std::bitset<8>(last8).to_ulong());
+    // std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(val) << std::endl;
+
+    //// Covers cot -- bad !!
+
+    // std::cout << a_cot << std::endl;
+
+    /// Covers chi squared rz
+    // ap_fixed<20, 10> chi_check (trackchi2rz);
+    // ap_int<20> chi_check_raw_int = chi_check.range(chi_check.width - 1, 0);
+    // std::cout << trackchi2rz << ", " << chi_check_raw_int << std::endl;
+
+    /// Covers chi squared rphi
+    // ap_fixed<20, 10> chi_check (trackchi2rphi);
+    // ap_int<20> chi_check_raw_int = chi_check.range(chi_check.width - 1, 0);
+    // std::cout << trackchi2rphi << ", " << chi_check_raw_int << std::endl;
+
+    // ap_fixed<18, 9> zT_check ( track.zT() );
+    // ap_int<18> chi_check_raw_int = zT_check.range(zT_check.width - 1, 0);
+    // std::cout << track.zT() << ", " << chi_check_raw_int << std::endl;
+
+
+    // Covers zT
+    // const double slope = 187.5351;
+    // const double intercept = 0.1239;
+    // double y_pred_abs = slope * std::abs(track.zT()) + intercept;
+    // const int trackzT_raw_int = (track.zT() < 0) ? -static_cast<int>(std::round(y_pred_abs))
+    //                :  static_cast<int>(std::round(y_pred_abs) - 1);
+    // std::cout << track.zT() << ", " << trackzT_raw_int << std::endl;
+
+    // Covers cot 
+    const double slope     = 2864.7318411285282;
+    const double intercept = -0.5283246724980017;
+    double y_pred_abs = slope * track.cot() + intercept;
+    const int int_raw = (track.cot() < 0) ? + static_cast<int>(std::round(y_pred_abs)) 
+                                          : + static_cast<int>(std::round(y_pred_abs));
+
+    std::cout << track.cot() << ", " << int_raw << std::endl;
 
     ap_fixed<20, 6> aa_nstub      = a_nstub;
     ap_fixed<20, 6> aa_z0         = a_z0;

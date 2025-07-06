@@ -85,7 +85,7 @@ namespace trackerTFP {
     TFile* file_ = nullptr;
     TTree* tree_ = nullptr;
 
-    std::vector<double> z0, cot, chi2rz, chi2rphi, chi2bend, n_lay_miss, nstub, real;
+    std::vector<double> zT, z0, cot, chi2rz, chi2rphi, chi2bend, n_lay_miss, nstub, real;
     TH1D* fake_rate;
 
     const bool is_real (const StreamStub& streamStub_, const StubAssociation* reconstructable, const StubAssociation* selection) 
@@ -117,14 +117,15 @@ namespace trackerTFP {
     {
       file_ = TFile::Open("TQAttributes.root", "RECREATE");
       tree_ = new TTree("TQTree", "Track Quality Attributes");
-      tree_->Branch("TrackVertex",     &z0);
-      tree_->Branch("TrackTanL",       &cot);
-      tree_->Branch("TrackChi2Rz",     &chi2rz);
-      tree_->Branch("TrackChi2RPhi",   &chi2rphi);
-      tree_->Branch("TrackChi2Bend",   &chi2bend);
-      tree_->Branch("TrackNLayMissed", &n_lay_miss);
-      tree_->Branch("TrackNStubs",     &nstub);
-      tree_->Branch("Real",            &real);
+      tree_->Branch("TrackVertexT",     &zT);
+      tree_->Branch("TrackVertex0",     &z0);
+      tree_->Branch("TrackTanL",        &cot);
+      tree_->Branch("TrackChi2Rz",      &chi2rz);
+      tree_->Branch("TrackChi2RPhi",    &chi2rphi);
+      tree_->Branch("TrackChi2Bend",    &chi2bend);
+      tree_->Branch("TrackNLayMissed",  &n_lay_miss);
+      tree_->Branch("TrackNStubs",      &nstub);
+      tree_->Branch("Real",             &real);
       fake_rate = new TH1D("fake_rate", "; Fake Rate; Frequency", 100, 0, 1);
     }
 
@@ -222,6 +223,7 @@ namespace trackerTFP {
         {
           const auto* lastTrack = &tracks.back();
 
+          zT.push_back        (lastTrack->a_zT);
           z0.push_back        (lastTrack->a_z0);
           cot.push_back       (lastTrack->a_cot);
           chi2rz.push_back    (lastTrack->a_chi2rz);
@@ -231,15 +233,15 @@ namespace trackerTFP {
           nstub.push_back     (lastTrack->a_nstub);
           real.push_back      (static_cast<double>(real_));
 
-          std::cout << lastTrack->a_nstub << ", "      // TrackNStubs
-                    << lastTrack->a_z0 << ", "         // TrackVertex
-                    << lastTrack->a_cot << ", "        // TrackTanL
-                    << lastTrack->a_chi2rphi << ", "   // TrackChi2RPhi
-                    << lastTrack->a_chi2rz << ", "     // TrackChi2Rz
-                    << lastTrack->a_chi2bend << ", "   // TrackChi2Bend
-                    << lastTrack->a_nlay_miss << ", "  // TrackNLayMissed
-                    << lastTrack->mva_ << ", "         // MVA score
-                    << real_ << std::endl;             // Truth label
+          // std::cout << lastTrack->a_nstub << ", "      // TrackNStubs
+          //           << lastTrack->a_z0 << ", "         // TrackVertex
+          //           << lastTrack->a_cot << ", "        // TrackTanL
+          //           << lastTrack->a_chi2rphi << ", "   // TrackChi2RPhi
+          //           << lastTrack->a_chi2rz << ", "     // TrackChi2Rz
+          //           << lastTrack->a_chi2bend << ", "   // TrackChi2Bend
+          //           << lastTrack->a_nlay_miss << ", "  // TrackNLayMissed
+          //           << lastTrack->mva_ << ", "         // MVA score
+          //           << real_ << std::endl;             // Truth label
 
         }
 

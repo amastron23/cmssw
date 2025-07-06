@@ -86,7 +86,8 @@ namespace trackerTFP {
       tt::StreamStub streamStub_;
 
       double a_cot, 
-             a_z0, 
+             a_z0,
+             a_zT,
              a_chi2rz, 
              a_chi2rphi, 
              a_chi2bend, 
@@ -125,6 +126,19 @@ namespace trackerTFP {
     double range(VariableTQ v) const { return dataFormatsTQ_[+v].range(); }
     //
     const edm::FileInPath& model() const { return model_; }
+
+    int predict_zT_int_raw (double x) {
+    // Model coefficients
+    const double slope = 187.5351;
+    const double intercept = 0.1239;
+
+    // Predict |y| from model
+    double y_pred_abs = slope * std::abs(x) + intercept;
+
+    // Return signed integer prediction, scaled to nearest int
+    return (x < 0) ? -static_cast<int>(std::round(y_pred_abs))
+                   :  static_cast<int>(std::round(y_pred_abs));
+    }
 
   private:
     // constructs TQ data formats
