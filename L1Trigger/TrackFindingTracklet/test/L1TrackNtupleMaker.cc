@@ -161,6 +161,7 @@ private:
   std::vector<float>* m_trk_pt;
   std::vector<float>* m_trk_eta;
   std::vector<float>* m_trk_tanL;
+  std::vector<float>* m_trk_zT;
   std::vector<float>* m_trk_phi;
   std::vector<float>* m_trk_d0;  // (filled if L1Tk_nPar==5, else 999)
   std::vector<float>* m_trk_z0;
@@ -344,6 +345,7 @@ void L1TrackNtupleMaker::endJob() {
   delete m_trk_pt;
   delete m_trk_eta;
   delete m_trk_tanL;
+  delete m_trk_zT;
   delete m_trk_phi;
   delete m_trk_z0;
   delete m_trk_d0;
@@ -468,6 +470,7 @@ void L1TrackNtupleMaker::beginJob() {
   m_trk_pt = new std::vector<float>;
   m_trk_eta = new std::vector<float>;
   m_trk_tanL = new std::vector<float>;
+  m_trk_zT = new std::vector<float>;
   m_trk_phi = new std::vector<float>;
   m_trk_z0 = new std::vector<float>;
   m_trk_d0 = new std::vector<float>;
@@ -586,6 +589,7 @@ void L1TrackNtupleMaker::beginJob() {
     eventTree->Branch("trk_pt", &m_trk_pt);
     eventTree->Branch("trk_eta", &m_trk_eta);
     eventTree->Branch("trk_tanL", &m_trk_tanL);
+    eventTree->Branch("trk_zT", &m_trk_zT);
     eventTree->Branch("trk_phi", &m_trk_phi);
     eventTree->Branch("trk_d0", &m_trk_d0);
     eventTree->Branch("trk_z0", &m_trk_z0);
@@ -733,6 +737,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     m_trk_pt->clear();
     m_trk_eta->clear();
     m_trk_tanL->clear();
+    m_trk_zT->clear();
     m_trk_phi->clear();
     m_trk_d0->clear();
     m_trk_z0->clear();
@@ -1367,6 +1372,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       // layer encoding
       const TTBV hitPattern((int)iterL1Track->hitPattern(), setup->numLayers());
       const double zT = iterL1Track->z0() + setup->chosenRofZ() * iterL1Track->tanL();
+      m_trk_zT->push_back(zT);
       const vector<int>& le = layerEncoding->layerEncoding(zT);
       vector<int> layers;
       layers.reserve(hitPattern.size());

@@ -95,7 +95,7 @@ print(f'~ Process ID: {options.process}')
 
 DatasetDatabase = "/home/hep/am2023/relvals/tt_tune_cp5/cmssw_14_0_0_pre2/tt_tune_cp5_phase2_sprint24.txt"
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 
 #--- To use MCsamples scripts, defining functions get*data*() for easy MC access,
 #--- follow instructions in https://github.com/cms-L1TK/MCsamples

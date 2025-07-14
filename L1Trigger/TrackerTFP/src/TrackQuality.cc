@@ -87,7 +87,7 @@ namespace trackerTFP {
       : frameTrack_(frameTrack), streamStub_(streamStub) {
     static const DataFormats* df = tq->dataFormats();
     static const tt::Setup* setup = df->setup();
-    const TrackDR track(frameTrack, df);
+    const TrackKF track(frameTrack, df);
     double trackchi2rphi(0.);
     double trackchi2rz(0.);
     TTBV hitPattern(0, streamStub.size());
@@ -144,17 +144,23 @@ namespace trackerTFP {
     const int chi2B = tq->toBinChi2B(ttTrack.chi2Bend());
     const int chi2rphi = tq->toBinchi2rphi(trackchi2rphi);
     const int chi2rz = tq->toBinchi2rz(trackchi2rz);
+
     // load in bdt
-    conifer::BDT<ap_fixed<10, 5>, ap_fixed<10, 5>> bdt(tq->model().fullPath());
-    // collect features and classify using bdt
-    const std::vector<ap_fixed<10, 5>>& output =
-        bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
-    const float mva = output[0].to_float();
+    // conifer::BDT<ap_fixed<10, 5>, ap_fixed<10, 5>> bdt(tq->model().fullPath());
+    // // collect features and classify using bdt
+    // const std::vector<ap_fixed<10, 5>>& output =
+    //     bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
+    // const float mva = output[0].to_float();
+
+    std::cout << track.cot() << ", " << track.zT() << ", " << track.zT() - track.cot() * setup->chosenRofZ() << ", " << trackchi2rphi << ", " << trackchi2rz << ", " << hitPattern << std::endl;
+
+
+
     // fill frame
     std::string hits = hitPattern.str();
     std::reverse(hits.begin(), hits.end());
     TTBV ttBV(hits);
-    ttBV += TTBV(tq->toBinMVA(mva), widthMVA_);
+    ttBV += TTBV(5, widthMVA_);
     tq->format(VariableTQ::chi2rphi).attach(trackchi2rphi, ttBV);
     tq->format(VariableTQ::chi2rz).attach(trackchi2rz, ttBV);
     frame_ = ttBV.bs();

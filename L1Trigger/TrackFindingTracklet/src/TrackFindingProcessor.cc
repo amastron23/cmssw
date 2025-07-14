@@ -214,6 +214,7 @@ namespace trklet {
     }
     // convert input TTTrackRefs into output TTTracks
     outputs.reserve(ttTrackRefs.size());
+    std::cout << "*********************************" << std::endl;
     for (const TTTrackRef& ttTrackRef : ttTrackRefs) {
       auto match = [&ttTrackRef](const Track& track) { return track.ttTrackRef_ == ttTrackRef; };
       const auto it = std::find_if(tracks_.begin(), tracks_.end(), match);
@@ -227,6 +228,13 @@ namespace trklet {
       const double ad0 = -ttTrackRef->d0();
       const double aChi2xyfit = it->chi2rphi_;
       const double aChi2zfit = it->chi2rz_;
+
+      // Full Attribute Check // 
+
+      // tanL, z0, zT, chi2rphi, chi2rz, hitpattern
+
+      std::cout << it->cot_ << ", " << it->zT_ << ", " << az0 << ", " << aChi2xyfit << ", " << aChi2zfit << ", " << it->hitPattern_ << std::endl;
+
       const double trkMVA1 = (TTTrack_TrackWord::tqMVABins[it->mva_]);
       static constexpr double trkMVA2 = 0.;
       static constexpr double trkMVA3 = 0.;
