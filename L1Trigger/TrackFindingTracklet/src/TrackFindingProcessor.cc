@@ -233,7 +233,7 @@ namespace trklet {
 
       // tanL, z0, zT, chi2rphi, chi2rz, hitpattern
 
-      std::cout << it->cot_ << ", " << it->zT_ << ", " << az0 << ", " << aChi2xyfit << ", " << aChi2zfit << ", " << it->hitPattern_ << std::endl;
+      // std::cout << it->cot_ << ", " << it->zT_ << ", " << az0 << ", " << aChi2xyfit << ", " << aChi2zfit << ", " << it->hitPattern_ << std::endl;
 
       const double trkMVA1 = (TTTrack_TrackWord::tqMVABins[it->mva_]);
       static constexpr double trkMVA2 = 0.;

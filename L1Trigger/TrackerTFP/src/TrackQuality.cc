@@ -145,16 +145,53 @@ namespace trackerTFP {
     const int chi2rphi = tq->toBinchi2rphi(trackchi2rphi);
     const int chi2rz = tq->toBinchi2rz(trackchi2rz);
 
-    // load in bdt
-    // conifer::BDT<ap_fixed<10, 5>, ap_fixed<10, 5>> bdt(tq->model().fullPath());
-    // // collect features and classify using bdt
-    // const std::vector<ap_fixed<10, 5>>& output =
-    //     bdt.decision_function({cot, z0, chi2B, nstub, n_missint, chi2rphi, chi2rz});
-    // const float mva = output[0].to_float();
+    // std::cout << track.cot() << ", " << track.zT() << ", " << track.zT() - track.cot() * setup->chosenRofZ() << ", " << trackchi2rphi << ", " << trackchi2rz << ", " << hitPattern << std::endl;
 
-    std::cout << track.cot() << ", " << track.zT() << ", " << track.zT() - track.cot() * setup->chosenRofZ() << ", " << trackchi2rphi << ", " << trackchi2rz << ", " << hitPattern << std::endl;
+    ap_fixed<20, 10> vivado_ap_fixed_chi2_rz   ( trackchi2rz );
+    ap_fixed<20, 10> vivado_ap_fixed_chi2_rphi ( trackchi2rphi );
+    const double slope_zT       = 187.5351;
+    const double intercept_zT   = 0.1239;
+    double y_pred_abs_zT = slope_zT * std::abs(track.zT()) + intercept_zT;
+    const double slope_cot     = 2864.7318411285282;
+    const double intercept_cot = -0.5283246724980017;
+    double y_pred_abs_cot = slope_cot * track.cot() + intercept_cot;
+    std::bitset<64> bs = hitPattern.bs();
+    std::string last8 = bs.to_string().substr(56, 8);
+    std::reverse(last8.begin(), last8.end());
 
 
+    // ******************* Stage 1: Input in tq_bdt block ******************* //
+
+    const int   vivado_int_chi2_rz        = vivado_ap_fixed_chi2_rz.range(vivado_ap_fixed_chi2_rz.width - 1, 0);
+    const int   vivado_int_chi2_rphi      = vivado_ap_fixed_chi2_rphi.range(vivado_ap_fixed_chi2_rphi.width - 1, 0);
+    const int   vivado_int_track_zT       = (track.zT() < 0) ? -static_cast<int>(std::round(y_pred_abs_zT)) : static_cast<int>(std::round(y_pred_abs_zT) - 1);
+    const int   vivado_int_track_cot      = std::round(y_pred_abs_cot);
+    const int   vivado_bdt_din_meta_hits  = static_cast<uint8_t>(std::bitset<8>(last8).to_ulong());
+
+    // Debug //
+    // std::cout << vivado_bdt_din_meta_hits << ", " << vivado_int_track_zT << ", " << vivado_int_track_cot << ", " << vivado_int_chi2_rz << ", " << vivado_int_chi2_rphi << std::endl;
+
+    // ******************* Stage 2: Transformation Block ******************* //
+
+    ap_fixed<20, 10>            bdt_z0;
+    bdt_z0.range(20 - 1, 0)     = vivado_int_track_zT * 5;
+
+    ap_fixed<20, 10>            bdt_tanL;
+    bdt_tanL.range(20 - 1, 0)   = vivado_int_track_cot / 3;
+
+    ap_fixed<20, 10>            bdt_nstubs;
+    bdt_nstubs.range(20 - 1, 0) = nstub;
+
+    ap_fixed<20, 10>            bdt_nlaymiss;
+    bdt_nlaymiss.range(20 - 1, 0) = n_missint;
+
+    ap_fixed<20, 10>            bdt_chi2_rz   (vivado_ap_fixed_chi2_rz);
+    ap_fixed<20, 10>            bdt_chi2_rphi (vivado_ap_fixed_chi2_rphi);
+
+    // ******************* Stage 3: BDT Evaluation Block ******************* //
+
+    conifer::BDT<ap_fixed<20, 10>, ap_fixed<20, 10>> bdt (tq->model().fullPath());
+    const ap_fixed<20, 10>& output = bdt.decision_function({bdt_nstubs, bdt_z0, bdt_tanL, bdt_chi2_rphi, bdt_chi2_rz, bdt_nlaymiss, 0}).at(0);
 
     // fill frame
     std::string hits = hitPattern.str();
