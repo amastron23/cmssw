@@ -39,8 +39,9 @@ namespace trklet {
     const TTBV chi2bend = TTBV(0, TTTrack_TrackWord::TrackBitWidths::kBendChi2Size);
     const TTBV valid = TTBV(1, TTTrack_TrackWord::TrackBitWidths::kValidSize);
     // convert bits into nice formats
+    static const trackerTFP::DataFormats* df_ = tq->dataFormats();
     const tt::Setup* setup = df->setup();
-    const TrackKF track(frameTrack, df);
+    const trackerTFP::TrackKF track (frameTrack, df_);
     inv2R_ = track.inv2R();
     phiT_ = track.phiT();
     cot_ = track.cot();
@@ -75,27 +76,29 @@ namespace trklet {
         chi2rzBin++;
       else
         break;
-    if (std::abs(invR) > rangeInvR / 2.)
-      valid_ = false;
-    if (std::abs(phi0) > rangePhi0 / 2.)
-      valid_ = false;
-    if (std::abs(cot_) > rangeCot / 2.)
-      valid_ = false;
-    if (std::abs(z0) > rangeZ0 / 2.)
-      valid_ = false;
-    if (std::abs(d0) > rangeD0 / 2.)
-      valid_ = false;
-    if (!valid_)
-      return;
+    // if (std::abs(invR) > rangeInvR / 2.)
+    //   valid_ = false;
+    // if (std::abs(phi0) > rangePhi0 / 2.)
+    //   valid_ = false;
+    // if (std::abs(cot_) > rangeCot / 2.)
+    //   valid_ = false;
+    // if (std::abs(z0) > rangeZ0 / 2.)
+    //   valid_ = false;
+    // if (std::abs(d0) > rangeD0 / 2.)
+    //   valid_ = false;
+    valid_ = true;
+    // if (!valid_)
+    //   return;
     const TTBV MVA_quality(mva_, TTTrack_TrackWord::TrackBitWidths::kMVAQualitySize);
-    const TTBV hit_pattern(hitPattern_.resize(nLayers).val(), nLayers);
-    const TTBV D0(d0, baseD0, TTTrack_TrackWord::TrackBitWidths::kD0Size, true);
-    const TTBV Chi2rz(chi2rzBin, TTTrack_TrackWord::TrackBitWidths::kChi2RZSize);
-    const TTBV Z0(z0, baseZ0, TTTrack_TrackWord::TrackBitWidths::kZ0Size, true);
-    const TTBV tanL(cot_, baseCot, TTTrack_TrackWord::TrackBitWidths::kTanlSize, true);
-    const TTBV Chi2rphi(chi2rphiBin, TTTrack_TrackWord::TrackBitWidths::kChi2RPhiSize);
-    const TTBV Phi0(phi0, basePhi0, TTTrack_TrackWord::TrackBitWidths::kPhiSize, true);
-    const TTBV InvR(invR, baseInvR, TTTrack_TrackWord::TrackBitWidths::kRinvSize, true);
+    // const TTBV hit_pattern(hitPattern_.resize(nLayers).val(), nLayers);
+    const TTBV hit_pattern (0, nLayers);
+    const TTBV D0(0, baseD0, TTTrack_TrackWord::TrackBitWidths::kD0Size, true);
+    const TTBV Chi2rz(0, TTTrack_TrackWord::TrackBitWidths::kChi2RZSize);
+    const TTBV Z0(0, baseZ0, TTTrack_TrackWord::TrackBitWidths::kZ0Size, true);
+    const TTBV tanL(0, baseCot, TTTrack_TrackWord::TrackBitWidths::kTanlSize, true);
+    const TTBV Chi2rphi(0, TTTrack_TrackWord::TrackBitWidths::kChi2RPhiSize);
+    const TTBV Phi0(0, basePhi0, TTTrack_TrackWord::TrackBitWidths::kPhiSize, true);
+    const TTBV InvR(0, baseInvR, TTTrack_TrackWord::TrackBitWidths::kRinvSize, true);
     partials_.emplace_back((valid + InvR + Phi0 + Chi2rphi).str());
     partials_.emplace_back((tanL + Z0 + Chi2rz).str());
     partials_.emplace_back((D0 + chi2bend + hit_pattern + MVA_quality + other_MVAs).str());
@@ -219,6 +222,7 @@ namespace trklet {
       const double aRinv = -2. * it->inv2R_;
       const double aphi = tt::deltaPhi(it->phiT_ - it->inv2R_ * setup_->chosenRofPhi() + region * setup_->baseRegion());
       const double aTanLambda = it->cot_;
+      // std::cout << aTanLambda << " from TFP::Track (2)" << std::endl;
       const double az0 = it->zT_ - it->cot_ * setup_->chosenRofZ();
       const double ad0 = -ttTrackRef->d0();
       const double aChi2xyfit = it->chi2rphi_;

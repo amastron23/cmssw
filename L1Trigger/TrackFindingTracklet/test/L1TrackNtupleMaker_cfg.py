@@ -1,11 +1,11 @@
-# N.B., DUE TO THE CHANGE IN STUB WINDOW SIZES WITH CMSSW 14_2_0_PRE2, THIS JOB HAS BEEN NODIFIED TO
-# RECREATE THE STUBS, WHICH IS NECESSARY WHEN RUNNING ON MONTE CARLO GENERATED WITH OLDER VERSIONS.
+#!/cvmfs/cms.cern.ch/el9_amd64_gcc12/cms/cmssw/CMSSW_15_1_0_pre4/bin/el9_amd64_gcc12/cmsRun
 
 ############################################################
 # define basic process
 ############################################################
 
 import FWCore.ParameterSet.Config as cms
+import FWCore.ParameterSet.VarParsing as VarParsing
 import FWCore.Utilities.FileUtils as FileUtils
 import os
 process = cms.Process("L1TrackNtuple")
@@ -15,15 +15,15 @@ process = cms.Process("L1TrackNtuple")
 ############################################################
 
 # D110 recommended (but D98 still works)
-GEOMETRY = "D98"
-#GEOMETRY = "D110"
+#GEOMETRY = "D98"
+GEOMETRY = "D110"
 
 # Set L1 tracking algorithm:
 # 'HYBRID' (baseline, 4par fit) or 'HYBRID_DISPLACED' (extended, 5par fit).
 # 'HYBRID_NEWKF' (baseline, 4par fit, with bit-accurate KF emulation),
 # 'HYBRID_REDUCED' to use the "L5L6" seeding only reduced configuration.
 # (Or legacy algos 'TMTT' or 'TRACKLET').
-L1TRKALGO = 'HYBRID'
+L1TRKALGO = 'HYBRID_NEWKF'
 
 WRITE_DATA = False
 
@@ -63,7 +63,39 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 # input and output
 ############################################################
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+def get_input_mc_line(dataset_database, line_number):
+    with open(dataset_database, 'r') as file:
+        lines = file.readlines()
+        if line_number < 0 or line_number >= len(lines):
+            raise IndexError("Line number out of range")
+        return lines[line_number].strip()
+
+# Set up VarParsing options
+options = VarParsing.VarParsing('analysis')
+
+# Add custom command-line arguments
+options.register('cluster',
+                 0, # default value
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Cluster ID from HTCondor")
+
+options.register('process',
+                 0, # default value
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Process ID from HTCondor")
+
+# Parse command-line arguments
+options.parseArguments()
+
+# Print the ClusterID and ProcessID
+print(f'~ Cluster ID: {options.cluster}')
+print(f'~ Process ID: {options.process}')
+
+DatasetDatabase = "/home/hep/am2023/relvals/tt_tune_cp5/cmssw_14_0_0_pre2/tt_tune_cp5_phase2_sprint24.txt"
+
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 #--- To use MCsamples scripts, defining functions get*data*() for easy MC access,
 #--- follow instructions in https://github.com/cms-L1TK/MCsamples
@@ -86,7 +118,13 @@ if GEOMETRY == "D110":
   #inputMC=getCMSdata(dataName)
   
   # ttbar + 200PU
-  inputMC = ["/store/relval/CMSSW_15_1_0_pre3/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU_150X_mcRun4_realistic_v1_STD_Run4D110_PU-v1/2590000/00c675dc-1517-4af7-8dd4-841e0668fefe.root"]
+    try:
+        InputMC = [get_input_mc_line(DatasetDatabase, options.process)]
+    except Exception as e:
+        print(f"Error: {e}")
+        InputMC = []
+
+    print(InputMC)
 
 elif GEOMETRY == "D98":
 
@@ -96,7 +134,8 @@ else:
 
   print("this is not a valid geometry!!!")
 
-process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*inputMC))
+process.TFileService = cms.Service("TFileService", fileName = cms.string('TQAttributes_' + str(options.process) + '.root'), closeFileFast = cms.untracked.bool(True))
+process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*InputMC))
 
 #if GEOMETRY == "D76":
 #  # If reading old MC dataset, drop incompatible EDProducts.
@@ -111,7 +150,6 @@ process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(*inp
 # Use skipEvents to select particular single events for test vectors
 #process.source.skipEvents = cms.untracked.uint32(11)
 
-process.TFileService = cms.Service("TFileService", fileName = cms.string('L1TrkNtuple.root'), closeFileFast = cms.untracked.bool(True))
 process.Timing = cms.Service("Timing", summaryOnly = cms.untracked.bool(True))
 
 

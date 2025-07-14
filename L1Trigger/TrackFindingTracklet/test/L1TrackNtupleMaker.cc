@@ -160,6 +160,7 @@ private:
   // all L1 tracks
   std::vector<float>* m_trk_pt;
   std::vector<float>* m_trk_eta;
+  std::vector<float>* m_trk_tanL;
   std::vector<float>* m_trk_phi;
   std::vector<float>* m_trk_d0;  // (filled if L1Tk_nPar==5, else 999)
   std::vector<float>* m_trk_z0;
@@ -342,6 +343,7 @@ void L1TrackNtupleMaker::endJob() {
   // clean up
   delete m_trk_pt;
   delete m_trk_eta;
+  delete m_trk_tanL;
   delete m_trk_phi;
   delete m_trk_z0;
   delete m_trk_d0;
@@ -465,6 +467,7 @@ void L1TrackNtupleMaker::beginJob() {
   // initilize
   m_trk_pt = new std::vector<float>;
   m_trk_eta = new std::vector<float>;
+  m_trk_tanL = new std::vector<float>;
   m_trk_phi = new std::vector<float>;
   m_trk_z0 = new std::vector<float>;
   m_trk_d0 = new std::vector<float>;
@@ -582,6 +585,7 @@ void L1TrackNtupleMaker::beginJob() {
   if (SaveAllTracks) {
     eventTree->Branch("trk_pt", &m_trk_pt);
     eventTree->Branch("trk_eta", &m_trk_eta);
+    eventTree->Branch("trk_tanL", &m_trk_tanL);
     eventTree->Branch("trk_phi", &m_trk_phi);
     eventTree->Branch("trk_d0", &m_trk_d0);
     eventTree->Branch("trk_z0", &m_trk_z0);
@@ -728,6 +732,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   if (SaveAllTracks) {
     m_trk_pt->clear();
     m_trk_eta->clear();
+    m_trk_tanL->clear();
     m_trk_phi->clear();
     m_trk_d0->clear();
     m_trk_z0->clear();
@@ -1077,14 +1082,15 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       float tmp_trk_phi = iterL1Track->momentum().phi();
       float tmp_trk_z0 = iterL1Track->z0();  //cm
       float tmp_trk_tanL = iterL1Track->tanL();
+      // std::cout << tmp_trk_tanL << " from TupleMaker" << std::endl;
       int tmp_trk_charge = (int)TMath::Sign(1, iterL1Track->rInv());
       bool usingNewKF = hphSetup->useNewKF();
-      if (usingNewKF) {
-        // Skip crazy tracks to avoid crash (as NewKF applies no cuts to kill them).
-        constexpr float crazy_z0_cut = 30.;  // Cut to kill any crazy tracks found by New KF (which applies no cuts)
-        if (fabs(tmp_trk_z0) > crazy_z0_cut)
-          continue;
-      }
+      // if (usingNewKF) {
+      //   // Skip crazy tracks to avoid crash (as NewKF applies no cuts to kill them).
+      //   constexpr float crazy_z0_cut = 30.;  // Cut to kill any crazy tracks found by New KF (which applies no cuts)
+      //   if (fabs(tmp_trk_z0) > crazy_z0_cut)
+      //     continue;
+      // }
 
       int tmp_trk_hitpattern = 0;
       tmp_trk_hitpattern = (int)iterL1Track->hitPattern();
@@ -1206,6 +1212,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
 
       m_trk_pt->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
+      m_trk_tanL->push_back(tmp_trk_tanL);
       m_trk_phi->push_back(tmp_trk_phi);
       m_trk_z0->push_back(tmp_trk_z0);
       if (L1Tk_nPar == 5)

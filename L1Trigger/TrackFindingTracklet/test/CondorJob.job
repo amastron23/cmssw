@@ -1,0 +1,10 @@
+Executable     = L1TrackNtupleMaker_cfg.py
+Arguments      = cluster=$(Cluster) process=$(Process)
+
+Output         = ./Output/Job.o.$(Cluster).$(Process)
+Error          = ./Error/Job.e.$(Cluster).$(Process)
+Log            = ./Log/Job.l.$(Cluster).$(Process)
+
+getenv         = True
++MaxRuntime    = 6500
+Queue 300
