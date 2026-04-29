@@ -14,12 +14,14 @@
 namespace trklet {
 
   KalmanFilter::KalmanFilter(const tt::Setup* setup,
-                             const DataFormats* dataFormats,
-                             KalmanFilterFormats* kalmanFilterFormats,
-                             tmtt::Settings* settings,
-                             tmtt::KFParamsComb* tmtt,
-                             int region,
-                             tt::TTTracks& ttTracks)
+                            const DataFormats* dataFormats,
+                            KalmanFilterFormats* kalmanFilterFormats,
+                            tmtt::Settings* settings,
+                            tmtt::KFParamsComb* tmtt,
+                            int region,
+                            tt::TTTracks& ttTracks,
+                            const TTClusterAssociationMap<Ref_Phase2TrackerDigi_>& clusterMap,
+                            const TTStubAssociationMap<Ref_Phase2TrackerDigi_>& stubMap)
       : setup_(setup),
         dataFormats_(dataFormats),
         kalmanFilterFormats_(kalmanFilterFormats),
@@ -27,7 +29,10 @@ namespace trklet {
         tmtt_(tmtt),
         region_(region),
         ttTracks_(ttTracks),
-        layer_(0) {
+        layer_(0),
+        ttClusterAssociationMap_(clusterMap),
+        ttStubAssociationMap_(stubMap)
+  {
     zTs_.reserve(settings_->etaRegions().size());
     for (double eta : settings_->etaRegions())
       zTs_.emplace_back(std::sinh(eta) * settings_->chosenRofZ());
@@ -317,41 +322,252 @@ namespace trklet {
   }
 
   // best state selection
-  void KalmanFilter::accumulator() {
-    // create container of pointer to make sorts less CPU intense
+void KalmanFilter::accumulator() {
+    // =========================================================================
+    // DIAGNOSTIC: Analyze input before selection (doesn't modify anything)
+    // =========================================================================
+    
+    // Make a copy of finals_ for diagnostic analysis (so we don't modify original)
+    std::vector<Track> inputTracks = finals_;
+    
+    std::cout << "\n========== ACCUMULATOR INPUT DIAGNOSTICS ==========" << std::endl;
+    
+    // Collect all candidates before selection
+    std::vector<Track*> allCandidates;
+    allCandidates.reserve(inputTracks.size());
+    for (auto& track : inputTracks) {
+        allCandidates.push_back(&track);
+    }
+    
+    // Count real/fake in all candidates
+    int nRealAll = 0, nFakeAll = 0;
+    for (Track* track : allCandidates) {
+        if (associateTrack(*track).isGenuine) {
+            nRealAll++;
+        } else {
+            nFakeAll++;
+        }
+    }
+    
+    std::cout << "Input to accumulator: " << inputTracks.size() << " tracks" << std::endl;
+    std::cout << "  Real: " << nRealAll << ", Fake: " << nFakeAll 
+              << ", Fake Rate: " << (100.0 * nFakeAll / (nRealAll + nFakeAll)) << "%" << std::endl;
+    
+    // Per-track analysis (group by track ID)
+    std::map<int, std::vector<Track*>> tracksByID;
+    for (Track* track : allCandidates) {
+        tracksByID[track->trackId_].push_back(track);
+    }
+    
+    std::cout << "\nPer-Track Input Summary (" << tracksByID.size() << " track IDs):" << std::endl;
+    for (const auto& [id, tracks] : tracksByID) {
+        int nRealThisID = 0, nFakeThisID = 0;
+        int maxConsistent = -1, maxConsistentPS = -1;
+        for (Track* track : tracks) {
+            if (associateTrack(*track).isGenuine) {
+                nRealThisID++;
+            } else {
+                nFakeThisID++;
+            }
+            maxConsistent = std::max(maxConsistent, track->numConsistent_);
+            maxConsistentPS = std::max(maxConsistentPS, track->numConsistentPS_);
+        }
+        std::cout << "  Track ID " << id << ": " << tracks.size() << " cand ("
+                  << nRealThisID << " real, " << nFakeThisID << " fake)"
+                  << " [max consistent: " << maxConsistent << ", max PS: " << maxConsistentPS << "]"
+                  << std::endl;
+    }
+    
+    std::cout << "====================================================\n" << std::endl;
+    
+    // =========================================================================
+    // ORIGINAL SELECTION LOGIC (UNCHANGED - SAME AS YOUR WORKING CODE)
+    // =========================================================================
+    
+    // First, replicate the sorting/selection logic from your original
     std::vector<Track*> finals;
     finals.reserve(finals_.size());
     std::transform(finals_.begin(), finals_.end(), std::back_inserter(finals), [](Track& track) { return &track; });
-    // prepare arrival order
+    
     std::vector<int> trackIds;
     trackIds.reserve(tracks_.size());
     for (Track* track : finals) {
-      const int trackId = track->trackId_;
-      if (std::find_if(trackIds.begin(), trackIds.end(), [trackId](int id) { return id == trackId; }) == trackIds.end())
-        trackIds.push_back(trackId);
+        const int trackId = track->trackId_;
+        if (std::find_if(trackIds.begin(), trackIds.end(), [trackId](int id) { return id == trackId; }) == trackIds.end())
+            trackIds.push_back(trackId);
     }
-    // sort in number of consistent stubs
+    
     auto moreConsistentLayers = [](Track* lhs, Track* rhs) { return lhs->numConsistent_ > rhs->numConsistent_; };
     std::stable_sort(finals.begin(), finals.end(), moreConsistentLayers);
-    // sort in number of consistent ps stubs
+    
     auto moreConsistentLayersPS = [](Track* lhs, Track* rhs) { return lhs->numConsistentPS_ > rhs->numConsistentPS_; };
     std::stable_sort(finals.begin(), finals.end(), moreConsistentLayersPS);
-    // sort in track id as arrived
+    
     auto order = [&trackIds](auto lhs, auto rhs) {
-      const auto l = find(trackIds.begin(), trackIds.end(), lhs->trackId_);
-      const auto r = find(trackIds.begin(), trackIds.end(), rhs->trackId_);
-      return std::distance(r, l) < 0;
+        const auto l = find(trackIds.begin(), trackIds.end(), lhs->trackId_);
+        const auto r = find(trackIds.begin(), trackIds.end(), rhs->trackId_);
+        return std::distance(r, l) < 0;
     };
     std::stable_sort(finals.begin(), finals.end(), order);
-    // keep first state (best due to previous sorts) per track id
+    
     auto sameTrack = [](Track* lhs, Track* rhs) { return lhs->trackId_ == rhs->trackId_; };
     finals.erase(std::unique(finals.begin(), finals.end(), sameTrack), finals.end());
-    // apply to actual track container
+    
     int i(0);
     for (Track* track : finals)
-      finals_[i++] = *track;
+        finals_[i++] = *track;
     finals_.resize(i);
-  }
+    
+    // =========================================================================
+    // DIAGNOSTIC: Analyze output after selection
+    // =========================================================================
+    
+    std::cout << "\n========== ACCUMULATOR OUTPUT DIAGNOSTICS ==========" << std::endl;
+    
+    int nRealOut = 0, nFakeOut = 0;
+    for (Track& track : finals_) {
+        if (associateTrack(track).isGenuine) {
+            nRealOut++;
+        } else {
+            nFakeOut++;
+        }
+    }
+    
+    std::cout << "Output from accumulator: " << finals_.size() << " tracks" << std::endl;
+    std::cout << "  Real: " << nRealOut << ", Fake: " << nFakeOut 
+              << ", Fake Rate: " << (100.0 * nFakeOut / (nRealOut + nFakeOut)) << "%" << std::endl;
+    
+    // Calculate efficiency
+    double realEfficiency = (nRealAll > 0) ? (100.0 * nRealOut / nRealAll) : 0;
+    double fakeRejection = (nFakeAll > 0) ? (100.0 * (nFakeAll - nFakeOut) / nFakeAll) : 100.0;
+    
+    std::cout << "\nSelection Performance:" << std::endl;
+    std::cout << "  Real Efficiency: " << realEfficiency << "% (" << nRealOut << "/" << nRealAll << ")" << std::endl;
+    std::cout << "  Fake Rejection: " << fakeRejection << "% (" << (nFakeAll - nFakeOut) << "/" << nFakeAll << ")" << std::endl;
+    
+    // =========================================================================
+    // ANALYZE "MIXED SIGNAL" CASES (both real and fake candidates for same track ID)
+    // =========================================================================
+    
+    int nMixedSignalIDs = 0;
+    int nWrongChoices = 0;
+    int nCorrectChoices = 0;
+    std::vector<int> wrongChoiceIDs;
+    
+    for (const auto& [id, tracks] : tracksByID) {
+        // Check if this track ID has both real AND fake candidates
+        bool hasReal = false;
+        bool hasFake = false;
+        
+        for (Track* track : tracks) {
+            if (associateTrack(*track).isGenuine) {
+                hasReal = true;
+            } else {
+                hasFake = true;
+            }
+        }
+        
+        if (hasReal && hasFake) {
+            nMixedSignalIDs++;
+            
+            // Find what was selected for this ID
+            auto selected = std::find_if(finals_.begin(), finals_.end(), 
+                [id](const Track& t) { return t.trackId_ == id; });
+            
+            if (selected != finals_.end()) {
+                bool selectedIsReal = associateTrack(*selected).isGenuine;
+                if (selectedIsReal) {
+                    nCorrectChoices++;
+                } else {
+                    nWrongChoices++;
+                    wrongChoiceIDs.push_back(id);
+                }
+            }
+        }
+    }
+    
+    std::cout << "\n========== MIXED SIGNAL ANALYSIS ==========" << std::endl;
+    std::cout << "Track IDs with both real AND fake candidates: " << nMixedSignalIDs << std::endl;
+    if (nMixedSignalIDs > 0) {
+        std::cout << "  Correct choices (chose REAL): " << nCorrectChoices << std::endl;
+        std::cout << "  WRONG choices (chose FAKE): " << nWrongChoices << std::endl;
+        std::cout << "  Wrong choice rate: " << (100.0 * nWrongChoices / nMixedSignalIDs) << "%" << std::endl;
+        
+        if (!wrongChoiceIDs.empty()) {
+            std::cout << "  Problematic track IDs: ";
+            for (size_t idx = 0; idx < wrongChoiceIDs.size(); idx++) {
+                if (idx > 0) std::cout << ", ";
+                std::cout << wrongChoiceIDs[idx];
+            }
+            std::cout << std::endl;
+        }
+    }
+    
+    // Detailed breakdown of mixed signal IDs
+    if (nMixedSignalIDs > 0) {
+        std::cout << "\nDetailed breakdown of mixed signal track IDs:" << std::endl;
+        for (const auto& [id, tracks] : tracksByID) {
+            bool hasReal = false;
+            bool hasFake = false;
+            for (Track* track : tracks) {
+                if (associateTrack(*track).isGenuine) {
+                    hasReal = true;
+                } else {
+                    hasFake = true;
+                }
+            }
+            
+            if (hasReal && hasFake) {
+                // Find what was selected
+                auto selected = std::find_if(finals_.begin(), finals_.end(), 
+                    [id](const Track& t) { return t.trackId_ == id; });
+                
+                std::cout << "  Track ID " << id << ": ";
+                if (selected != finals_.end()) {
+                    bool selectedIsReal = associateTrack(*selected).isGenuine;
+                    std::cout << (selectedIsReal ? "✓ Chose REAL" : "✗ Chose FAKE");
+                    std::cout << " (cons=" << selected->numConsistent_ 
+                              << ", ps=" << selected->numConsistentPS_ << ")";
+                } else {
+                    std::cout << "? No track selected";
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+    
+    std::cout << "============================================\n" << std::endl;
+    
+    // Find which tracks were selected per ID
+    std::cout << "\nSelected Tracks:" << std::endl;
+    for (const Track& track : finals_) {
+        bool isReal = associateTrack(track).isGenuine;
+        std::cout << "  Track ID " << track.trackId_ 
+                  << ": " << (isReal ? "REAL" : "FAKE")
+                  << " (cons=" << track.numConsistent_ 
+                  << ", ps=" << track.numConsistentPS_ << ")" << std::endl;
+    }
+    
+    std::cout << "===================================================\n" << std::endl;
+    
+    // =========================================================================
+    // FINAL OUTPUT (matches your original format)
+    // =========================================================================
+    
+    int nReal = 0;
+    int nFake = 0;
+    
+    for (Track& track : finals_) {
+        if (associateTrack(track).isGenuine) {
+            nReal++;
+        } else {
+            nFake++;
+        }
+    }
+    
+    std::cout << nReal << ", " << nFake << std::endl;
+    std::cout << "Done" << std::endl;
+}
 
   // Transform States into output products
   void KalmanFilter::conv(tt::StreamsStub& streamsStub, tt::StreamsTrack& streamsTrack) {

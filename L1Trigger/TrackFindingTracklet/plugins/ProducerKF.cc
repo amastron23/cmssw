@@ -75,6 +75,12 @@ namespace trklet {
     tmtt::KFParamsComb* tmtt_;
     // print end job internal unused MSB
     bool printDebug_;
+
+    // for investigating moving the TQ at the level of the KF
+
+    edm::EDGetTokenT<TTStubAssociationMap<Ref_Phase2TrackerDigi_> > ttStubTruthToken_;
+    edm::EDGetTokenT<TTClusterAssociationMap<Ref_Phase2TrackerDigi_> > ttClusterTruthToken_;
+
   };
 
   ProducerKF::ProducerKF(const edm::ParameterSet& iConfig)
@@ -142,6 +148,8 @@ namespace trklet {
     // book ES products
     esGetTokenSetup_ = esConsumes();
     esGetTokenDataFormats_ = esConsumes<edm::Transition::BeginRun>();
+    ttClusterTruthToken_ = consumes<TTClusterAssociationMap<Ref_Phase2TrackerDigi_> >(iConfig.getParameter<edm::InputTag>("TTClusterTruth"));
+    ttStubTruthToken_ = consumes<TTStubAssociationMap<Ref_Phase2TrackerDigi_> >(iConfig.getParameter<edm::InputTag>("TTStubTruth"));
   }
 
   void ProducerKF::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
@@ -152,6 +160,11 @@ namespace trklet {
 
   void ProducerKF::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     // helper class to store configurations
+    edm::Handle<TTClusterAssociationMap<Ref_Phase2TrackerDigi_>> ttClusterAssociationMapHandle;
+    iEvent.getByToken(ttClusterTruthToken_, ttClusterAssociationMapHandle);
+    edm::Handle<TTStubAssociationMap<Ref_Phase2TrackerDigi_>> ttStubAssociationMapHandle;
+    iEvent.getByToken(ttStubTruthToken_, ttStubAssociationMapHandle);
+
     const tt::Setup* setup = &iSetup.getData(esGetTokenSetup_);
     settings_.setMagneticField(setup->bField());
     auto valid = [](int sum, const tt::FrameTrack& f) { return sum + (f.first.isNull() ? 0 : 1); };
@@ -178,7 +191,7 @@ namespace trklet {
     }
     for (int region = 0; region < setup->numRegions(); region++) {
       // object to fit tracks in a processing region
-      KalmanFilter kf(setup, dataFormats_, &kalmanFilterFormats_, &settings_, tmtt_, region, ttTracks);
+      KalmanFilter kf(setup, dataFormats_, &kalmanFilterFormats_, &settings_, tmtt_, region, ttTracks, *ttClusterAssociationMapHandle, *ttStubAssociationMapHandle);
       // read in and organize input tracks and stubs
       kf.consume(tracks, stubs);
       // fill output products
