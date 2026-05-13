@@ -1,0 +1,31 @@
+11-May-2026 16:55:24 BST  Initiating request to open file file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00007.root
+11-May-2026 16:55:24 BST  Successfully opened file file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00007.root
+Begin processing the 1st record. Run 1, Event 1, LumiSection 1 on stream 0 at 11-May-2026 16:55:25.359 BST
+DTCID: 1
+ /  Slink: 0
+ /  Slink: 1
+ /  Slink: 2
+ /  Slink: 3
+11-May-2026 16:55:25 BST  Closed file file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00007.root
+TimeReport> Time report complete in 3.40039 seconds
+ Time Summary: 
+ - Min event:   0.00175598
+ - Max event:   0.00175598
+ - Avg event:   0.00175598
+ - Total loop:  0.449656
+ - Total init:  2.95073
+ - Total job:   3.40039
+ - Total EventSetup: 0.0634161
+ - Total non-module: 0.0155656
+ Event Throughput: 2.22392 ev/s
+ CPU Summary: 
+ - Total loop:     0.30474
+ - Total init:     2.51045
+ - Total extra:    0
+ - Total children: 0.085588
+ - Total job:      2.8152
+ Processing Summary: 
+ - Number of Events:  1
+ - Number of Global Begin Lumi Calls:  1
+ - Number of Global Begin Run Calls: 1
+

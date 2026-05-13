@@ -45,7 +45,7 @@ process.trackerGeometry.applyAlignment = False
 ## to read local cabling map you need to use the following configuration lines: 
 process.load("CondCore.CondDB.CondDB_cfi")
 # process.CondDB.connect = 'sqlite_file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/again/CMSSW_16_0_0_pre4/src/Geometry/TrackerCommonData/data/CRack_PhaseII/crackCablingMap.db'
-process.CondDB.connect = 'sqlite_file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_16_0_0_pre4/src/CondTools/SiPhase2Tracker/test/my_crack.db'
+process.CondDB.connect = 'sqlite_file:/home/hep/am2023/sara_crack/CMSSW_16_0_0_pre4/src/my_crack.db'
 process.PoolDBESSource = cms.ESSource("PoolDBESSource",
     process.CondDB,
     toGet = cms.VPSet(cms.PSet(
@@ -64,7 +64,7 @@ process.source = cms.Source("PoolSource",
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_15_0_4/src/EventFilter/Utilities/test/outputFEDRawData_alaa.root"
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_sourceid01230_index000.root"
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_Noise.root"
-       "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_VCTH500_50Hz_Random_L1As.root"
+         "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00004.root"
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_15_0_4/src/EventFilter/Utilities/test/output_dataset_BES_Reference_Binary_VCTH500_50Hz_Random_L1As.root"
      )
 )
@@ -78,7 +78,6 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 #         algo.TanLorentzAnglePerTesla_Barrel = cms.double(0.0)
 # if hasattr(algo, "TanLorentzAnglePerTesla_Endcap"):
 #         algo.TanLorentzAnglePerTesla_Endcap = cms.double(0.0)
-
 
 process.Unpacker = cms.EDProducer("RawToClusterProducer",
 #     fedRawDataCollection = cms.InputTag("rawDataCollector") ## srecko
