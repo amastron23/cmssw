@@ -101,7 +101,7 @@ namespace trklet {
       // build output Track
       std::string reversedHitPattern = hitPattern.str();
       std::reverse(reversedHitPattern.begin(), reversedHitPattern.end());
-      TrackTQ trackTQ(*frame.track_, reversedHitPattern, mva, chi20F, chi21F);
+      TrackTQ trackTQ(*frame.track_, reversedHitPattern, mva, chi20F, chi21F, frame.track_->zT(), frame.track_->cot());
       // store result
       output.push_back(trackTQ.frame());
     }

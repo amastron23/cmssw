@@ -16,5 +16,6 @@ TrackFindingTrackletProducer_params = cms.PSet (
   BranchTTTracks   = cms.string( "TTTrackAccepted" ),                  #
   BranchTruncated  = cms.string( "Truncated"       ),                  #
   PrintKFDebug     = cms.bool  ( False ),                              # print end job internal unused MSB
-
+  TTClusterTruth   = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"),
+  TTStubTruth      = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"),
 )
