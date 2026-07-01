@@ -27,17 +27,17 @@ process.source = cms.Source("EmptySource")
 
 # Limit the number of events processed based on the raw file content
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(268) #Adjust this as needed
+    input = cms.untracked.int32(9000) #Adjust this as needed
 )
 
 # Define the DTHDAQToFEDRawDataConverter module
 process.dthDAQToFEDRawData = cms.EDProducer('DTHDAQToFEDRawDataConverter',
-    inputFile = cms.string('orbit_stream.raw-fed00000-index000.raw'),  # Path to your input raw file
+    inputFile = cms.string('/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_REVERSED_FOR_SARA_TO_CHECK.raw'),  # Path to your input raw file
 )
 
 # Define the output module to write FEDRawData to a ROOT file
 process.output = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string("outputFEDRawData.root"),  # Output ROOT file
+    fileName = cms.untracked.string("/home/hep/am2023/sara_crack/CMSSW_16_0_0_pre4/src/CRACK_REVERSED_FOR_SARA_TO_CHECK.root"),  # Output ROOT file
     outputCommands = cms.untracked.vstring('keep *')  # Keep everything for now
 )
 

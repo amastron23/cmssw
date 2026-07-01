@@ -65,14 +65,14 @@ process.source = cms.Source("PoolSource",
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_sourceid01230_index000.root"
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_Noise.root"
 
-       "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_REVERSED_FOR_SARA_TO_CHECK.root",
+       "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00004.root",
     #    "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00005.root",
     #    "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00007.root"
 
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_15_0_4/src/EventFilter/Utilities/test/output_dataset_BES_Reference_Binary_VCTH500_50Hz_Random_L1As.root"
      )
 )
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 
 # algo = process.mix.digitizers.pixel.SSDigitizerAlgorithm

@@ -230,7 +230,7 @@ void RawToClusterProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
         std::cout << "DTCID: " << dtcID << " /  Slink: " << iSlink <<  "  totId = " << totID << " / fedData.size(): " << fedData.size() << " Core ID = " << coreID << std::endl;
 
         const unsigned char* dataPtr = fedData.data();
-        printf("0x%02X%02X\n", dataPtr[0], dataPtr[1]);
+        //printf("0x%02X%02X\n", dataPtr[0], dataPtr[1]);
         // for (size_t i = 0; i < 16; i += 8) {  // 8 words per line = 128 bits
         //     std::cout << std::hex;
         //     for (size_t j = 0; j < 8 && i + j < 16; ++j) {
