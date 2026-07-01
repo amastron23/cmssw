@@ -45,7 +45,7 @@ process.trackerGeometry.applyAlignment = False
 ## to read local cabling map you need to use the following configuration lines: 
 process.load("CondCore.CondDB.CondDB_cfi")
 # process.CondDB.connect = 'sqlite_file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/again/CMSSW_16_0_0_pre4/src/Geometry/TrackerCommonData/data/CRack_PhaseII/crackCablingMap.db'
-process.CondDB.connect = 'sqlite_file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_16_0_0_pre4/src/CondTools/SiPhase2Tracker/test/my_crack.db'
+process.CondDB.connect = 'sqlite_file:/home/hep/am2023/sara_crack/CMSSW_16_0_0_pre4/src/my_crack.db'
 process.PoolDBESSource = cms.ESSource("PoolDBESSource",
     process.CondDB,
     toGet = cms.VPSet(cms.PSet(
@@ -65,16 +65,17 @@ process.source = cms.Source("PoolSource",
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_sourceid01230_index000.root"
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_Noise.root"
 
-       "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/alaa_update/CMSSW_16_0_0_pre1/src/EventFilter/Phase2TrackerRawToDigi/test/outputFEDRawData_BES_Reference_Binary_VCTH500_50Hz_Random_L1As.root"
+       "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_REVERSED_FOR_SARA_TO_CHECK.root",
+    #    "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00005.root",
+    #    "file:/home/hep/am2023/alaa_event_raw/CMSSW_16_0_0_pre1/src/CRACK_4_LADDERS_May_6th_2026_sourceid00007.root"
 
 #        "file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_15_0_4/src/EventFilter/Utilities/test/output_dataset_BES_Reference_Binary_VCTH500_50Hz_Random_L1As.root"
      )
 )
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
 
 
 # algo = process.mix.digitizers.pixel.SSDigitizerAlgorithm
-# if hasattr(algo, "LorentzAngle_DB"):
 #         algo.LorentzAngle_DB = cms.bool(False)
 # if hasattr(algo, "TanLorentzAnglePerTesla_Barrel"):
 #         algo.TanLorentzAnglePerTesla_Barrel = cms.double(0.0)
@@ -109,7 +110,7 @@ process.out = cms.OutputModule("PoolOutputModule",
       'keep *_mix_Tracker_*',
       ),
 #     fileName = cms.untracked.string('crackClustersAlaa.root')
-    fileName = cms.untracked.string('crackClustersAlaa_BES_Reference_Binary_VCTH500_50Hz_Random_L1A.root')
+    fileName = cms.untracked.string('CoreID_2.root')
 )
 
 process.Timing = cms.Service("Timing",

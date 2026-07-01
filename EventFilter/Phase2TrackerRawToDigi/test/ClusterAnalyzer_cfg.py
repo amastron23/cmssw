@@ -26,7 +26,7 @@ process.ClusterAnalyzer = cms.EDAnalyzer('ClusterAnalyzer',
     ProductLabel = cms.InputTag("hltSiPhase2Clusters")
 )
 
-process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring("file:raw2clusters.root"))
+process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring("file:CoreID_2.root"))
 
 
 if ANALYZE_PACKUNPACK:
@@ -43,7 +43,7 @@ elif ANALYZE_CRACK:
   
   process.source = cms.Source("PoolSource", 
       fileNames = cms.untracked.vstring(
-          "file:crackClustersAlaa_BES_Reference_Binary_VCTH500_50Hz_Random_L1A.root"
+          "file:CoreID_2.root"
       )
   )
   # Update label to match the output from the unpacker process
@@ -61,7 +61,7 @@ else:
 # Create output root file for TTree.
 process.TFileService = cms.Service('TFileService', 
     fileName = cms.string(
-        'ClusterAnalyzer_TTree.root'
+        'Decoded_CoreID_2.root'
     ), 
     closeFileFast = cms.untracked.bool(True)
 )
@@ -86,7 +86,7 @@ else:
     process.trackerGeometry.applyAlignment = False
 
     process.load("CondCore.CondDB.CondDB_cfi")
-    process.CondDB.connect = 'sqlite_file:/afs/cern.ch/work/f/fiorendi/private/l1tt/unpacker/crack/CMSSW_16_0_0_pre4/src/CondTools/SiPhase2Tracker/test/my_crack.db'
+    process.CondDB.connect = 'sqlite_file:/home/hep/am2023/sara_crack/CMSSW_16_0_0_pre4/src/my_crack.db'
     process.PoolDBESSource = cms.ESSource("PoolDBESSource",
         process.CondDB,
         toGet = cms.VPSet(cms.PSet(

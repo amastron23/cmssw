@@ -62,6 +62,67 @@ public:
   Phase2TrackerCluster1D unpackPixelOnPS(uint32_t, unsigned int);
   
   void dumpRawFile(const unsigned char*, size_t, bool);
+  int sourceIDToSlinkQ(unsigned sourceID);
+  int getGBTID(int coreID, int index);
+
+  std::unordered_map<int, std::unordered_map<int, int>> gbtMapping = {
+      {0, {          // Core ID = 0
+          {0, 70},   // index 0 -> FPGA_Link 4 -> GBT 70 (71-1)
+          {1, 67},   // index 1 -> FPGA_Link 5 -> GBT 67 (68-1)
+          {2, 63},   // index 2 -> FPGA_Link 6 -> GBT 63 (64-1)
+          {3, 71},   // index 3 -> FPGA_Link 7 -> GBT 71 (72-1)
+          {4, 69},   // index 4 -> FPGA_Link 8 -> GBT 69 (70-1)
+          {5, 65},   // index 5 -> FPGA_Link 9 -> GBT 65 (66-1)
+          {6, 61},   // index 6 -> FPGA_Link 10 -> GBT 61 (62-1)
+          {7, 62},   // index 7 -> FPGA_Link 11 -> GBT 62 (63-1)
+          {8, 66},   // index 8 -> FPGA_Link 12 -> GBT 66 (67-1)
+          {9, 60},   // index 9 -> FPGA_Link 13 -> GBT 60 (61-1)
+          {10, 64},  // index 10 -> FPGA_Link 14 -> GBT 64 (65-1)
+          {11, 68}   // index 11 -> FPGA_Link 15 -> GBT 68 (69-1)
+      }},
+      {1, {          // Core ID = 1
+          {0, 56},   // index 0 -> FPGA_Link 100 -> GBT 56 (57-1)
+          {1, 52},   // index 1 -> FPGA_Link 101 -> GBT 52 (53-1)
+          {2, 48},   // index 2 -> FPGA_Link 102 -> GBT 48 (49-1)
+          {3, 54},   // index 3 -> FPGA_Link 103 -> GBT 54 (55-1)
+          {4, 50},   // index 4 -> FPGA_Link 104 -> GBT 50 (51-1)
+          {5, 49},   // index 5 -> FPGA_Link 105 -> GBT 49 (50-1)
+          {6, 53},   // index 6 -> FPGA_Link 106 -> GBT 53 (54-1)
+          {7, 57},   // index 7 -> FPGA_Link 107 -> GBT 57 (58-1)
+          {8, 59},   // index 8 -> FPGA_Link 108 -> GBT 59 (60-1)
+          {9, 51},   // index 9 -> FPGA_Link 109 -> GBT 51 (52-1)
+          {10, 55},  // index 10 -> FPGA_Link 110 -> GBT 55 (56-1)
+          {11, 58}   // index 11 -> FPGA_Link 111 -> GBT 58 (59-1)
+      }},
+      {2, {          // Core ID = 2
+          {6, 32},   // index 0 -> FPGA_Link 88 -> GBT 32 (33-1)
+          {7, 28},   // index 1 -> FPGA_Link 89 -> GBT 28 (29-1)
+          {8, 24},   // index 2 -> FPGA_Link 90 -> GBT 24 (25-1)
+          {9, 30},   // index 3 -> FPGA_Link 91 -> GBT 30 (31-1)
+          {10, 26},   // index 4 -> FPGA_Link 92 -> GBT 26 (27-1)
+          {11, 25},   // index 5 -> FPGA_Link 93 -> GBT 25 (26-1)
+          {12, 29},   // index 6 -> FPGA_Link 94 -> GBT 29 (30-1)
+          {13, 33},   // index 7 -> FPGA_Link 95 -> GBT 33 (34-1)
+          {14, 35},   // index 8 -> FPGA_Link 96 -> GBT 35 (36-1)
+          {15, 27},   // index 9 -> FPGA_Link 97 -> GBT 27 (28-1)
+          {16, 31},  // index 10 -> FPGA_Link 98 -> GBT 31 (32-1)
+          {17, 34}   // index 11 -> FPGA_Link 99 -> GBT 34 (35-1)
+      }},
+      {3, {          // Core ID = 3
+          {0, 44},   // index 0 -> FPGA_Link 64 -> GBT 44 (45-1)
+          {1, 40},   // index 1 -> FPGA_Link 65 -> GBT 40 (41-1)
+          {2, 36},   // index 2 -> FPGA_Link 66 -> GBT 36 (37-1)
+          {3, 42},   // index 3 -> FPGA_Link 67 -> GBT 42 (43-1)
+          {4, 38},   // index 4 -> FPGA_Link 68 -> GBT 38 (39-1)
+          {5, 37},   // index 5 -> FPGA_Link 69 -> GBT 37 (38-1)
+          {6, 41},   // index 6 -> FPGA_Link 70 -> GBT 41 (42-1)
+          {7, 45},   // index 7 -> FPGA_Link 71 -> GBT 45 (46-1)
+          {8, 47},   // index 8 -> FPGA_Link 72 -> GBT 47 (48-1)
+          {9, 39},   // index 9 -> FPGA_Link 73 -> GBT 39 (40-1)
+          {10, 43},  // index 10 -> FPGA_Link 74 -> GBT 43 (44-1)
+          {11, 46}   // index 11 -> FPGA_Link 75 -> GBT 46 (47-1)
+      }}
+  };
 
 private:
   void produce(edm::Event&, const edm::EventSetup&) override;
@@ -88,6 +149,32 @@ RawToClusterProducer::RawToClusterProducer(const edm::ParameterSet& iConfig)
 }
 
 RawToClusterProducer::~RawToClusterProducer() {}
+
+int RawToClusterProducer::sourceIDToSlinkQ(unsigned sourceID) {
+    static const std::unordered_map<unsigned, int> reverseMapping = {
+        {4, 2},   // 0004 -> SLINK_Q(0)(2)
+        {5, 1},   // 0005 -> SLINK_Q(0)(1)
+        {6, 0},   // 0006 -> SLINK_Q(0)(0)
+        {7, 3}    // 0007 -> SLINK_Q(0)(3)
+    };
+    
+    auto it = reverseMapping.find(sourceID);
+    if (it != reverseMapping.end()) {
+        return it->second;
+    }
+    return -1; // or handle error
+}
+
+int RawToClusterProducer::getGBTID(int coreID, int index) {
+    auto coreIt = gbtMapping.find(coreID);
+    if (coreIt != gbtMapping.end()) {
+        auto indexIt = coreIt->second.find(index);
+        if (indexIt != coreIt->second.end()) {
+            return indexIt->second;
+        }
+    }
+    return -1; // Not found
+}
 
 void RawToClusterProducer::beginRun(const edm::Run& iRun, const edm::EventSetup& iSetup) {
   // get cabling from event setup
@@ -135,12 +222,27 @@ void RawToClusterProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
     // read the 4 slinks
     for (unsigned int iSlink = 0; iSlink < SLINKS_PER_DTC; iSlink++) {
       // as defined in the DAQProducer code
-      unsigned totID = iSlink + SLINKS_PER_DTC * (dtcID - 1) + CMSSW_TRACKER_ID;// + 1230 - 2;
+      unsigned totID = iSlink + SLINKS_PER_DTC * (dtcID - 1) + CMSSW_TRACKER_ID;
+      unsigned coreID = sourceIDToSlinkQ(totID);
       const FEDRawData& fedData = fedRawDataCollection->FEDData(totID);
+
       if (fedData.size() > 0 ) {
-        std::cout << "DTCID: " << dtcID << " /  Slink: " << iSlink <<  "  totId = " << totID << " / fedData.size(): " << fedData.size() << std::endl;
+        std::cout << "DTCID: " << dtcID << " /  Slink: " << iSlink <<  "  totId = " << totID << " / fedData.size(): " << fedData.size() << " Core ID = " << coreID << std::endl;
 
         const unsigned char* dataPtr = fedData.data();
+        printf("0x%02X%02X\n", dataPtr[0], dataPtr[1]);
+        // for (size_t i = 0; i < 16; i += 8) {  // 8 words per line = 128 bits
+        //     std::cout << std::hex;
+        //     for (size_t j = 0; j < 8 && i + j < 16; ++j) {
+        //         uint16_t word = (static_cast<uint16_t>(dataPtr[(i + j) * 2]) << 0) |
+        //                         (static_cast<uint16_t>(dataPtr[(i + j) * 2 + 1]) << 8);
+                
+        //         std::cout << "0x" << std::setw(4) << std::setfill('0') << word;
+        //         if (j < 7) std::cout << " ";
+        //     }
+        //     std::cout << std::dec << std::endl;
+        // }
+
 //         dumpRawFile(dataPtr, fedData.size(), false);
 //         dumpRawFile(dataPtr, fedData.size(), true);
 
@@ -204,13 +306,41 @@ void RawToClusterProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
           // where clusters from channel X are split into 2*i and 2*i+1 based on being from CIC0 or CIC1
           
 //           unsigned int gbt_id = iSlink * 24 + std::div(iChannel, 2).quot;   // temp for crack
-          unsigned int gbt_id = iSlink * 12 + std::div(iChannel, 2).quot + 24; // temp for 6th may files
+          unsigned int gbt_id = getGBTID(coreID, std::div(iChannel, 2).quot); // temp for 6th may files
 //           unsigned int gbt_id = iSlink * MODULES_PER_SLINK + std::div(iChannel, 2).quot;
           // if tray 1, gbt_id should be 60   
           // if tray 2, gbt_id should be 48   
           // if tray 3, gbt_id should be 36   
           // if tray 4, gbt_id should be 24   
 //           DTCELinkId thisDTCElinkId(dtcID, gbt_id, 0);
+          // find the channel offset
+          // HEADER_N_LINES = 4         MODULES_PER_SLINK = 18          N_BYTES_PER_WORD = 4 (32 bits)
+          int channelOffset = theOffsets.getOffsetForChannel(iChannel);
+          uint32_t headerWord;
+          int idx = 0;
+          if (channelOffset % 2 == 0){
+            idx = initial_offset + theOffsets.getOffsetForChannel(iChannel) * N_BYTES_PER_WORD;
+            std::pair<uint32_t,uint32_t> two_words = split64bLine(dataPtr,idx);  
+            headerWord = two_words.first;
+          } else {
+            idx = initial_offset + (theOffsets.getOffsetForChannel(iChannel) - 1) * N_BYTES_PER_WORD;
+            std::pair<uint32_t,uint32_t> two_words = split64bLine(dataPtr,idx);  
+            headerWord = two_words.second;          
+          } 
+          
+          // L1ID_BITS = 9  // CIC_ERROR_BITS = 9  // N_PIXEL_CLUSTER_BITS = 7;  // N_STRIP_CLUSTER_BITS = 7;
+          // unsigned long eventID = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS)) & L1ID_MAX_VALUE; // 9-bit field
+          int channelErrors = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS - CIC_ERROR_BITS)) & CIC_ERROR_MASK; // 9-bit field
+          
+          if ((headerWord & 0xFFFF0000) == 0xFFFF0000 && (headerWord & 0x000000FF) == 0x000000FF) { 
+            // Ignore Masked channels
+            continue;
+          }
+
+          // std::cout << std::hex << std::setw(2) << std::setfill('0') 
+          //         << static_cast<int>(headerWord) << ", " 
+          //         << std::dec << gbt_id << " " << iChannel << " " << std::div(iChannel, 2).quot << std::endl;
+
           DTCELinkId thisDTCElinkId(1, gbt_id, 0);
 
           int thisDetId = -1;
@@ -231,25 +361,6 @@ void RawToClusterProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
             std::cout << std::endl;
             continue;
           }
-
-          // find the channel offset
-          // HEADER_N_LINES = 4         MODULES_PER_SLINK = 18          N_BYTES_PER_WORD = 4 (32 bits)
-          int channelOffset = theOffsets.getOffsetForChannel(iChannel);
-          uint32_t headerWord;
-          int idx = 0;
-          if (channelOffset % 2 == 0){
-            idx = initial_offset + theOffsets.getOffsetForChannel(iChannel) * N_BYTES_PER_WORD;
-            std::pair<uint32_t,uint32_t> two_words = split64bLine(dataPtr,idx);  
-            headerWord = two_words.first;
-          } else {
-            idx = initial_offset + (theOffsets.getOffsetForChannel(iChannel) - 1) * N_BYTES_PER_WORD;
-            std::pair<uint32_t,uint32_t> two_words = split64bLine(dataPtr,idx);  
-            headerWord = two_words.second;          
-          } 
-          
-          // L1ID_BITS = 9  // CIC_ERROR_BITS = 9  // N_PIXEL_CLUSTER_BITS = 7;  // N_STRIP_CLUSTER_BITS = 7;
-          // unsigned long eventID = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS)) & L1ID_MAX_VALUE; // 9-bit field
-          int channelErrors = (headerWord >> (N_BITS_PER_WORD - L1ID_BITS - CIC_ERROR_BITS)) & CIC_ERROR_MASK; // 9-bit field
 
           unsigned int numStripClusters =
               (headerWord >> (N_BITS_PER_WORD - L1ID_BITS - CIC_ERROR_BITS - N_STRIP_CLUSTER_BITS)) &
